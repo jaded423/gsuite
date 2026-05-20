@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gspace"
+version = "0.1.0"
+description = "In-house Google Workspace MCP server for Elevated Trading"
+readme = "CLAUDE.md"
+requires-python = ">=3.11"
+authors = [{ name = "Joshua Brown" }]
+license = { text = "Proprietary" }
+dependencies = [
+    "mcp>=1.2.0",
+    "google-api-python-client>=2.150",
+    "google-auth>=2.35",
+    "google-auth-oauthlib>=1.2",
+    "google-auth-httplib2>=0.2",
+    "pyyaml>=6.0",
+    "anthropic>=0.40",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+]
+
+[project.scripts]
+gspace = "gspace.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["gspace*"]
+exclude = ["tests*"]

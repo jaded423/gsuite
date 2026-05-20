@@ -1,0 +1,77 @@
+# Example ruleset for the gspace rules engine.
+#
+# Demonstrates the declarative rule schema. Compile + apply with:
+#
+#   gspace rules compile rules/example-routing.yaml
+#   gspace rules apply   rules/example-routing.yaml --confirm
+#
+# Schema:
+#   rules:
+#     - name: <unique-id>
+#       match:                    # any combination
+#         from: "<address-or-list>"
+#         to: "<address-or-list>"
+#         subject: "<contains>"
+#         query: |                # raw Gmail search syntax
+#           from:foo@example.com OR subject:"bar"
+#         negated_query: "..."    # exclude clause
+#       except_in: [other-rule]   # don't match if another rule's match block does
+#       route: {to: "<label>"}    # destination label (auto-creates)
+#       actions: [archive, mark_read, skip_spam]
+#
+# Run `gspace rules schema --help` for the full reference.
+
+rules:
+
+  # 1) Simple from-based routing
+  - name: vendor-newsletters
+    match:
+      from:
+        - newsletter@vendor-a.example.com
+        - news@vendor-b.example.com
+    route: {to: Newsletters}
+    actions: [archive, mark_read]
+
+  # 2) Subject-prefix routing with negation
+  - name: support-bracket
+    match:
+      subject: "[Support]"
+      negated_query: "from:bot@example.com"
+    route: {to: Support}
+    actions: [archive]
+
+  # 3) Multi-condition with exception handoff
+  #
+  # Mail from a key customer normally goes to CustomerService — unless the
+  # subject is "Thank you", in which case it goes to Billing instead.
+  - name: key-customer
+    match:
+      from:
+        - contact@customer-a.example.com
+    route:
+      - if: "subject contains 'Thank you'"
+        to: Billing
+        actions: [archive]
+      - else:
+          to: CustomerService
+          actions: [archive]
+
+  # 4) Raw query escape hatch (for cases the structured schema can't express)
+  - name: shipping-notices
+    match:
+      query: |
+        from:no-reply@shipping.example.com AND
+        (subject:"Shipment:" OR subject:"Delivered")
+    route: {to: Shipping}
+    actions: [archive]
+
+  # 5) Excluding from another rule
+  #
+  # `except_in: [key-customer]` means: if this rule's match would also match
+  # `key-customer`, the key-customer rule wins. Prevents double-routing.
+  - name: generic-billing
+    match:
+      to: billing@example.com
+    except_in: [key-customer]
+    route: {to: Billing}
+    actions: [archive, skip_spam]

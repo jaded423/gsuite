@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Build / dist
+build/
+dist/
+*.egg
+
+# Claude Code local
+.claude/settings.local.json
+
+# Editor / OS
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Local config (gspace tokens, OAuth client, settings)
+*.local.json
+tokens.json
+oauth-client.json
