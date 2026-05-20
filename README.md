@@ -225,13 +225,6 @@ Same approach behind [`nvimConfig`](https://github.com/jaded423/nvimConfig), [`t
 
 ---
 
-## 💀 Blame my existence on
-
-- [**Anthropic**](https://www.anthropic.com/) — for shipping MCP as an open spec, and for Claude itself being the development partner that made this feasible
-- The [`@gongrzhe`](https://github.com/gongrzhe) and [`@piotr-agier`](https://github.com/piotr-agier) Workspace MCPs — broke in ways that justified building this one. Standing on what you started.
-
----
-
 ## 🐛 Troubleshooting
 
 ```bash
