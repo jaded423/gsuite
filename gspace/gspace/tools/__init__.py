@@ -17,6 +17,7 @@ from . import drive_tools  # noqa: F401
 from . import gmail_bulk  # noqa: F401
 from . import gmail_classify  # noqa: F401
 from . import gmail_filters  # noqa: F401
+from . import gmail_messages  # noqa: F401
 from . import gmail_rules  # noqa: F401
 from . import sheets_tools  # noqa: F401
 from . import slides_tools  # noqa: F401

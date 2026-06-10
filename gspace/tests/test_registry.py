@@ -6,6 +6,10 @@ from gspace.tools import all_tools, build_registry
 
 
 EXPECTED_TOOLS = {
+    "gmail.read": {
+        "gmail_search_messages",
+        "gmail_read_message",
+    },
     "gmail.filters": {
         "gmail_list_filters",
         "gmail_get_filter",

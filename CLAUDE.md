@@ -9,7 +9,71 @@ conventions (patterns every server should follow) live here.
 
 | Server | Subdir | Purpose | Status |
 |---|---|---|---|
-| `gspace` | [gspace/](gspace/CLAUDE.md) | Google Workspace — Gmail, Drive, Docs, Sheets, Slides, Calendar | 38 tools, 101 tests. Retired `mcp-elevated` on 2026-04-17. |
+| `gspace` | [gspace/](gspace/CLAUDE.md) | Google Workspace — Gmail, Drive, Docs, Sheets, Slides, Calendar | 40 tools, 101 tests. `gmail_search_messages` + `gmail_read_message` (read tools, feature `gmail.read`, scope satisfied by existing `gmail.modify`) added 2026-06-10. Retired `mcp-elevated` on 2026-04-17. Runs as 3 per-account instances — see below. |
+
+## Multi-account setup (gspace × 3 Google accounts)
+
+`gspace` runs as **one server instance per Google account**, isolated by the
+`GSPACE_CONFIG_DIR` env var (`settings.py` reads it; defaults to
+`~/.config/gspace`). Each instance has its own `oauth-client.json` (same
+"Claude" GCP Desktop client, reused), `settings.json`, and `tokens.json`.
+Set up 2026-06-02 so Claude can search/operate across all three drives from
+any project (e.g. "find this file in any of my drives").
+
+| Server (user scope) | Account | Config dir |
+|---|---|---|
+| `gspace-elevated` | joshua@elevatedtrading.com | `~/.config/gspace` |
+| `gspace-dax` | joshua@daxdistro.com | `~/.config/gspace-dax` |
+| `gspace-jaded` | jaded423@gmail.com | `~/.config/gspace-jaded` |
+
+All three registered at **user scope** (visible in every project). All enable
+the full 16-feature set (9 OAuth scopes). Tools appear as
+`mcp__gspace-<acct>__<tool>`.
+
+**Multi-account is by separate instances, on purpose.** One shared codebase,
+one config dir per account (`GSPACE_CONFIG_DIR`) → write a tool once, all
+instances get it on restart. The hard wall between accounts (separate
+processes/tokens, so `gspace-elevated` literally cannot touch Dax data) is a
+feature given the Z/Dax-split sensitivity. **Option if the need arises:** collapse
+to a single server with an optional `account` param per tool that switches
+`GSPACE_CONFIG_DIR` at call time. Convenient (one registration, pick account
+per call) but sacrifices that isolation — a wrong `account` arg could operate on
+the wrong mailbox. Not built; revisit only if managing N instances becomes the
+pain point.
+
+**Note:** `gspace-elevated` reuses the original `~/.config/gspace`. A legacy
+**project-scoped** `gspace` server (registered under `~/projects/mcp`) also
+points at that dir — inside this project both load and double the elevated
+tools. Remove it with `claude mcp remove gspace` (run from `~/projects/mcp`).
+
+### Add another account
+
+```bash
+ACCT=newname
+mkdir -p ~/.config/gspace-$ACCT
+cp -p ~/.config/gspace/oauth-client.json ~/.config/gspace-$ACCT/oauth-client.json
+chmod 600 ~/.config/gspace-$ACCT/oauth-client.json
+# write settings.json (copy an existing one; toggle features as needed)
+cp ~/.config/gspace-dax/settings.json ~/.config/gspace-$ACCT/settings.json
+
+# add the account as a Test User on the "Claude" GCP OAuth consent screen first,
+# then run the browser auth (pick the right account, click Allow):
+GSPACE_CONFIG_DIR=~/.config/gspace-$ACCT ~/projects/mcp/gspace/.venv/bin/gspace auth
+
+# register at user scope, then relaunch Claude Code
+claude mcp add gspace-$ACCT -s user -e GSPACE_CONFIG_DIR=~/.config/gspace-$ACCT \
+  -- ~/projects/mcp/gspace/.venv/bin/gspace serve
+```
+
+Verify which account an instance is authed as (Drive scope, no userinfo scope needed):
+
+```bash
+GSPACE_CONFIG_DIR=~/.config/gspace-$ACCT ~/projects/mcp/gspace/.venv/bin/python -c \
+  "from gspace import auth; print(auth.build_service('drive','v3').about().get(fields='user').execute()['user']['emailAddress'])"
+```
+
+Re-auth a single instance (after enabling new features → new scopes): same
+`gspace auth` line with that instance's `GSPACE_CONFIG_DIR`.
 
 ## Conventions for any MCP built here
 
