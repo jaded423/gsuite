@@ -9,7 +9,7 @@ conventions (patterns every server should follow) live here.
 
 | Server | Subdir | Purpose | Status |
 |---|---|---|---|
-| `gspace` | [gspace/](gspace/CLAUDE.md) | Google Workspace — Gmail, Drive, Docs, Sheets, Slides, Calendar | 40 tools, 101 tests. `gmail_search_messages` + `gmail_read_message` (read tools, feature `gmail.read`, scope satisfied by existing `gmail.modify`) added 2026-06-10. Retired `mcp-elevated` on 2026-04-17. Runs as 3 per-account instances — see below. |
+| `gspace` | [gspace/](gspace/CLAUDE.md) | Google Workspace — Gmail, Drive, Docs, Sheets, Slides, Calendar | 42 tools, 101 tests. 2026-06-10: added `gmail_search_messages` + `gmail_read_message` (feature `gmail.read`) and `gmail_create_draft` + `gmail_send_message` (feature `gmail.send`, scope repointed to `gmail.modify` so drafts work, default-on). All satisfied by existing `gmail.modify` grant — no re-consent. Retired `mcp-elevated` on 2026-04-17. Runs as 4 per-account instances — see below. |
 
 ## Multi-account setup (gspace × 3 Google accounts)
 
@@ -25,10 +25,13 @@ any project (e.g. "find this file in any of my drives").
 | `gspace-elevated` | joshua@elevatedtrading.com | `~/.config/gspace` |
 | `gspace-dax` | joshua@daxdistro.com | `~/.config/gspace-dax` |
 | `gspace-jaded` | jaded423@gmail.com | `~/.config/gspace-jaded` |
+| `gspace-point4` | webmaster@point4project.com | `~/.config/gspace-point4` |
 
-All three registered at **user scope** (visible in every project). All enable
-the full 16-feature set (9 OAuth scopes). Tools appear as
-`mcp__gspace-<acct>__<tool>`.
+All registered at **user scope** (visible in every project). All enable
+the full feature set. Tools appear as `mcp__gspace-<acct>__<tool>`.
+`gspace-point4` added 2026-06-10 for Point4 outbound mail (drafts/send via the
+new compose tools). webmaster's seat is a scoped Workspace admin (Gmail routing
+only — not DKIM/auth).
 
 **Multi-account is by separate instances, on purpose.** One shared codebase,
 one config dir per account (`GSPACE_CONFIG_DIR`) → write a tool once, all

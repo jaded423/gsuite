@@ -10,6 +10,10 @@ EXPECTED_TOOLS = {
         "gmail_search_messages",
         "gmail_read_message",
     },
+    "gmail.send": {
+        "gmail_create_draft",
+        "gmail_send_message",
+    },
     "gmail.filters": {
         "gmail_list_filters",
         "gmail_get_filter",

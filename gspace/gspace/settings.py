@@ -30,7 +30,10 @@ BACKUPS_DIR = CONFIG_DIR / "backups"
 # Keep keys dotted (domain.action) to mirror the tool namespace.
 FEATURE_SCOPES: dict[str, list[str]] = {
     "gmail.read": ["https://www.googleapis.com/auth/gmail.readonly"],
-    "gmail.send": ["https://www.googleapis.com/auth/gmail.send"],
+    # Compose+send (drafts AND sending). drafts.create needs gmail.modify, not
+    # the narrower gmail.send scope — and modify is already granted on every
+    # account, so hosting these here means no re-consent.
+    "gmail.send": ["https://www.googleapis.com/auth/gmail.modify"],
     "gmail.filters": ["https://www.googleapis.com/auth/gmail.settings.basic"],
     "gmail.bulk_modify": ["https://www.googleapis.com/auth/gmail.modify"],
     "gmail.classify": ["https://www.googleapis.com/auth/gmail.modify"],
@@ -61,7 +64,7 @@ LEGACY_FEATURE_ALIASES: dict[str, list[str]] = {
 
 DEFAULT_FEATURES: dict[str, bool] = {
     "gmail.read": True,
-    "gmail.send": False,
+    "gmail.send": True,
     "gmail.filters": True,
     "gmail.bulk_modify": True,
     "gmail.classify": False,
