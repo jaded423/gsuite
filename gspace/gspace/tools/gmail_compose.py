@@ -1,9 +1,11 @@
-"""Gmail compose tools — create drafts and send messages.
+"""Gmail compose tools — create, update, and delete drafts; send messages.
 
-The `gmail.send` feature was declared but wired to no tool. These two handlers
+The `gmail.send` feature was declared but wired to no tool. These handlers
 fill it: `gmail_create_draft` (preferred — user reviews/sends from their mail
-client) and `gmail_send_message` (direct send, for when the user explicitly
-approves). Both authenticate as the instance's account and send as that mailbox.
+client), `gmail_update_draft` / `gmail_delete_draft` for revising drafts in
+place instead of trash-and-recreate, and `gmail_send_message` (direct send,
+for when the user explicitly approves). All authenticate as the instance's
+account and send as that mailbox.
 """
 
 from __future__ import annotations
@@ -88,6 +90,77 @@ def create_draft(
         "to": to,
         "subject": subject,
     }
+
+
+@tool(
+    name="gmail_update_draft",
+    feature="gmail.send",
+    description=(
+        "Replace the content of an existing Gmail draft in place (does NOT "
+        "send). Keeps the same draft_id and thread; the message_id changes. "
+        "Full replacement — pass the complete to/subject/body, not a diff. "
+        "Returns {draft_id, message_id, thread_id}."
+    ),
+    input_schema={
+        "type": "object",
+        "required": ["draft_id", "to", "subject", "body"],
+        "properties": {
+            "draft_id": {
+                "type": "string",
+                "description": "Draft id from gmail_create_draft or the Drafts list.",
+            },
+            **_COMPOSE_PROPS,
+        },
+    },
+)
+def update_draft(
+    draft_id: str,
+    to: str,
+    subject: str,
+    body: str,
+    cc: str | None = None,
+    bcc: str | None = None,
+    reply_to: str | None = None,
+) -> dict[str, Any]:
+    svc = _gmail()
+    raw = _build_raw(to, subject, body, cc, bcc, reply_to)
+    draft = (
+        svc.users()
+        .drafts()
+        .update(userId="me", id=draft_id, body={"message": raw})
+        .execute()
+    )
+    return {
+        "draft_id": draft.get("id", ""),
+        "message_id": (draft.get("message") or {}).get("id", ""),
+        "thread_id": (draft.get("message") or {}).get("threadId", ""),
+        "to": to,
+        "subject": subject,
+    }
+
+
+@tool(
+    name="gmail_delete_draft",
+    feature="gmail.send",
+    description=(
+        "Permanently delete a Gmail draft (does not go to Trash, cannot be "
+        "undone). Returns {deleted: true, draft_id}."
+    ),
+    input_schema={
+        "type": "object",
+        "required": ["draft_id"],
+        "properties": {
+            "draft_id": {
+                "type": "string",
+                "description": "Draft id from gmail_create_draft or the Drafts list.",
+            },
+        },
+    },
+)
+def delete_draft(draft_id: str) -> dict[str, Any]:
+    svc = _gmail()
+    svc.users().drafts().delete(userId="me", id=draft_id).execute()
+    return {"deleted": True, "draft_id": draft_id}
 
 
 @tool(

@@ -12,6 +12,8 @@ EXPECTED_TOOLS = {
     },
     "gmail.send": {
         "gmail_create_draft",
+        "gmail_update_draft",
+        "gmail_delete_draft",
         "gmail_send_message",
     },
     "gmail.filters": {
