@@ -64,3 +64,80 @@ def test_create_returns_url(fake_svc):
     out = sheets_tools.sheets_create("Q2 Metrics")
     assert out["spreadsheet_id"] == "SID_NEW"
     assert "SID_NEW" in out["url"]
+
+
+def test_add_sheet_returns_new_gid(fake_svc):
+    fake_svc.spreadsheets.return_value.batchUpdate.return_value.execute.return_value = {
+        "replies": [{"addSheet": {"properties": {"sheetId": 123, "title": "Indica", "index": 1}}}]
+    }
+    out = sheets_tools.sheets_add_sheet("SID", "Indica")
+    assert out["ok"] is True
+    assert out["sheet_id"] == 123
+    body = fake_svc.spreadsheets.return_value.batchUpdate.call_args.kwargs["body"]
+    assert body["requests"][0]["addSheet"]["properties"]["title"] == "Indica"
+
+
+def test_add_sheet_passes_index(fake_svc):
+    fake_svc.spreadsheets.return_value.batchUpdate.return_value.execute.return_value = {
+        "replies": [{"addSheet": {"properties": {"sheetId": 5, "title": "T", "index": 2}}}]
+    }
+    sheets_tools.sheets_add_sheet("SID", "T", index=2)
+    props = fake_svc.spreadsheets.return_value.batchUpdate.call_args.kwargs["body"][
+        "requests"
+    ][0]["addSheet"]["properties"]
+    assert props["index"] == 2
+
+
+def test_add_sheet_rejects_empty_title():
+    assert sheets_tools.sheets_add_sheet("SID", "")["ok"] is False
+
+
+def _stub_list(fake_svc, sheets):
+    fake_svc.spreadsheets.return_value.get.return_value.execute.return_value = {
+        "sheets": [{"properties": p} for p in sheets]
+    }
+
+
+def test_rename_sheet_by_sheet_id(fake_svc):
+    fake_svc.spreadsheets.return_value.batchUpdate.return_value.execute.return_value = {}
+    out = sheets_tools.sheets_rename_sheet("SID", "New", sheet_id=7)
+    assert out["sheet_id"] == 7 and out["title"] == "New"
+    req = fake_svc.spreadsheets.return_value.batchUpdate.call_args.kwargs["body"][
+        "requests"
+    ][0]["updateSheetProperties"]
+    assert req["properties"] == {"sheetId": 7, "title": "New"}
+    assert req["fields"] == "title"
+
+
+def test_rename_sheet_resolves_title(fake_svc):
+    _stub_list(fake_svc, [{"sheetId": 0, "title": "A", "index": 0}, {"sheetId": 9, "title": "B", "index": 1}])
+    fake_svc.spreadsheets.return_value.batchUpdate.return_value.execute.return_value = {}
+    out = sheets_tools.sheets_rename_sheet("SID", "C", title="B")
+    assert out["sheet_id"] == 9
+
+
+def test_rename_sheet_unknown_title_errors(fake_svc):
+    _stub_list(fake_svc, [{"sheetId": 0, "title": "A", "index": 0}])
+    out = sheets_tools.sheets_rename_sheet("SID", "C", title="Nope")
+    assert out["ok"] is False
+
+
+def test_rename_sheet_needs_identifier(fake_svc):
+    out = sheets_tools.sheets_rename_sheet("SID", "C")
+    assert out["ok"] is False
+
+
+def test_delete_sheet_by_gid(fake_svc):
+    fake_svc.spreadsheets.return_value.batchUpdate.return_value.execute.return_value = {}
+    out = sheets_tools.sheets_delete_sheet("SID", sheet_id=4)
+    assert out["deleted_sheet_id"] == 4
+    req = fake_svc.spreadsheets.return_value.batchUpdate.call_args.kwargs["body"][
+        "requests"
+    ][0]["deleteSheet"]
+    assert req["sheetId"] == 4
+
+
+def test_delete_sheet_ambiguous_title_errors(fake_svc):
+    _stub_list(fake_svc, [{"sheetId": 1, "title": "Dup", "index": 0}, {"sheetId": 2, "title": "Dup", "index": 1}])
+    out = sheets_tools.sheets_delete_sheet("SID", title="Dup")
+    assert out["ok"] is False

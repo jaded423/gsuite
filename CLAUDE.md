@@ -389,3 +389,98 @@ Everything we actually used in the 2026-04-16 session is covered. Filter managem
 4. **Name ambiguity.** `gspace` reads as either "Elevated Trading's MCP" or "elevated-privilege MCP" — confusing if open-sourced. `et-workspace` is clearer. Decide before PyPI.
 5. **Phase 5 scope discipline.** Drive/Docs/Sheets/Calendar is a large surface; `@piotr-agier/google-drive-mcp` works today. Port tools only when the existing MCP blocks a real workflow, not preemptively.
 6. **Structured error contract.** CLAUDE.md specifies `{error, retryable, docs}` error objects — confirm this is enforced uniformly across all 14 tools, not per-tool ad-hoc.
+
+## Multi-org OAuth architecture (2026-06-17) — Internal per Workspace + Testing for jaded
+
+> **⏸ SHELVED 2026-06-17 — NOT the current state. Stop-gap in effect.**
+> The split below is the *target*, deferred. **Current working state:** all four
+> accounts (`gsuite-{elevated,dax,point4,jaded}`) share the ONE Elevated Desktop
+> client `664420379329-…` in project `ancient-sunspot-471815-g9`, on a single
+> **External app in Testing**. All four are authed and connected *today* — Joshua
+> has live access to every mailbox, and Cody can use it now by clicking through the
+> "unverified app" warning once.
+>
+> **Why shelved, not executed:** migrating to per-org Internal apps is a piecewise
+> cutover — each account loses access until *its* new Internal client is built,
+> consent screen flipped Internal, and re-authed. Joshua has full multi-mailbox
+> access right now and won't trade a working setup for a half-migrated one. The
+> External/Testing stop-gap is good enough: Cody eats the one-time unverified
+> message, everyone works today. Revisit when there's appetite for the cutover.
+>
+> **Already built toward the target (don't redo):** dir rename to
+> `~/.config/gsuite-elevated` (agnostic naming, all scripts + MCP registrations
+> updated, **kept — not shelved**); `setup-org-clients.sh` / `enable-apis.sh` /
+> `check-oauth.sh` helpers; the **JadedViber** consent-screen branding + a Desktop
+> "tools" client in personal project `danger-zone-007` (reserved for the future
+> jaded External instance); jadedviber.com `/app/`, `/privacy/`, `/terms/`, logo.
+> `remint-oauth.sh` is DEPRECATED — the target uses `setup-org-clients.sh`.
+> Resume point: the "Per-org setup runbook" below.
+
+**Decision (target, deferred).** Do NOT pursue full Google OAuth verification for
+one shared External app. Instead give each Workspace account its own **Internal**
+OAuth app, and keep the one consumer account (jaded) on an **External app in
+Testing** mode.
+
+**Why.** The requested scope set includes RESTRICTED scopes (`gmail.modify`,
+`gmail.settings.basic`). Full verification of an External app with restricted
+scopes requires a demo video PLUS an annual third-party **CASA** security
+assessment (~$540–4,500/yr) AND is still subject to the 100-user cap until
+approved. **Internal** apps (owned by a Workspace org, usable only by that org's
+users) need **none of that** — no verification, no video, no CASA, no user cap,
+and refresh tokens **do not** expire after 7 days. Restricted Gmail scopes are
+allowed Internal. This is strictly better for a multi-org personal toolset.
+
+| Account | Google type | OAuth model | GCP project | Notes |
+|---|---|---|---|---|
+| elevated | Workspace (elevatedtrading.com) | **Internal** | (own) | Covers **Cody** automatically — he's @elevatedtrading.com |
+| dax | Workspace (daxdistro.com) | **Internal** | (own) | |
+| point4 | Workspace | **Internal** | (own) | |
+| jaded | consumer (jaded423@gmail.com) | **External / Testing** | personal (e.g. danger-zone-007) | Can't be Internal (no org). Sole test user = you. Token expires ~7 days of non-use → just re-auth on next use; no reminder wanted. |
+
+**Current live state (per `./check-oauth.sh`, 2026-06-17):** ALL FOUR dirs still
+share ONE Desktop client `664420379329-…` in the **Elevated** project
+`ancient-sunspot-471815-g9`. The planned remint to `danger-zone-007`
+(`remint-oauth.sh`) was never executed. So today the whole toolset rides
+Elevated's GCP on a single External app — the configuration that triggers the
+verification wall. Granted scopes (live): gmail.modify, gmail.send,
+gmail.settings.basic, drive, documents, spreadsheets, presentations, calendar,
+tasks.
+
+**Target end state:** four DISTINCT clients, one per dir, three Internal + jaded
+Testing. `setup-org-clients.sh` (NEW) installs a distinct client per dir and
+supersedes the single-client `remint-oauth.sh`.
+
+### Per-org setup runbook
+For each of elevated, dax, point4 (in that org's own GCP project):
+1. `./enable-apis.sh <PROJECT_ID>` — enables the 7 APIs (gmail, drive, docs,
+   sheets, slides, calendar-json, tasks).
+2. Console → OAuth consent screen → **User type: Internal**. App name **JadedViber**
+   (must match across all). Home page `https://jadedviber.com/app/`, privacy
+   `/privacy`, terms `/terms`, logo `~/projects/jadedViber/snek-logo.png`.
+3. Console → Credentials → Create OAuth client ID → **Desktop app**. Download JSON.
+4. Repeat per org. Then install all at once:
+   `./setup-org-clients.sh elevated=el.json dax=dax.json point4=p4.json`
+5. jaded: in its personal project, set publishing status **Testing**, add
+   jaded423 as a test user, create a Desktop client, then
+   `./setup-org-clients.sh jaded=jaded.json`.
+6. Verify: `./check-oauth.sh --apis` — confirm each account points at its OWN
+   project and scopes match.
+
+### Drift risk + guardrail
+Scopes themselves live in `gsuite/settings.py` (same code → identical scope
+requests), so they don't drift. What CAN drift per project: enabled APIs,
+consent-screen branding, client creds. `check-oauth.sh` is the drift guardrail —
+run it after any change; each account should show a DIFFERENT project_id once
+migrated.
+
+### Helper scripts (this repo)
+- `setup-org-clients.sh` — install a distinct OAuth client per account dir + reauth.
+- `enable-apis.sh <PROJECT>` — enable the 7 required APIs in a project.
+- `check-oauth.sh [--apis]` — drift/status report across all 4 dirs.
+- `remint-oauth.sh` — DEPRECATED single-client installer (kept for history).
+
+### jadedViber site (done 2026-06-17)
+Branding assets shipped to jadedviber.com (GitHub Pages, plain HTML):
+`/app/` (OAuth home page, H1 "JadedViber", explains purpose + scopes),
+`/privacy/`, `/terms/` (limited-use disclosure), and `snek-logo.png` (512×512
+mascot on #0a0a0a — transparent snek.png rendered white on Google's consent card).
