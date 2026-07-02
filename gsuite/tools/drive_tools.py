@@ -15,6 +15,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from googleapiclient.http import MediaInMemoryUpload
+
 from ..auth import with_retry
 from . import drive_common
 from ._errors import error
@@ -189,6 +191,53 @@ def drive_create_folder(name: str, parent_id: str = "root") -> dict[str, Any]:
     created = with_retry(
         lambda: svc.files()
         .create(body=body, fields="id,name,parents", supportsAllDrives=True)
+        .execute()
+    )
+    return {"ok": True, **created}
+
+
+@tool(
+    name="drive_create_file",
+    feature="drive.write",
+    description=(
+        "Create a file in Drive with text content. Pass `mime_type` to control "
+        "the stored type (default 'text/markdown' so `.md` notes upload as raw "
+        "Markdown, not a converted Google Doc). Parent defaults to My Drive root; "
+        "pass `parent_id` to nest in a folder. For a native Google Doc/Sheet/Slide "
+        "use the docs_/sheets_/slides_ create tools instead. Returns id, name, "
+        "mimeType, parents, webViewLink."
+    ),
+    input_schema={
+        "type": "object",
+        "required": ["name", "content"],
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "File name including extension, e.g. 'notes.md'.",
+            },
+            "content": {"type": "string", "description": "UTF-8 text body."},
+            "mime_type": {"type": "string", "default": "text/markdown"},
+            "parent_id": {"type": "string", "default": "root"},
+        },
+    },
+)
+def drive_create_file(
+    name: str,
+    content: str,
+    mime_type: str = "text/markdown",
+    parent_id: str = "root",
+) -> dict[str, Any]:
+    svc = _svc()
+    body = {"name": name, "parents": [parent_id], "mimeType": mime_type}
+    media = MediaInMemoryUpload(content.encode("utf-8"), mimetype=mime_type)
+    created = with_retry(
+        lambda: svc.files()
+        .create(
+            body=body,
+            media_body=media,
+            fields="id,name,mimeType,parents,webViewLink",
+            supportsAllDrives=True,
+        )
         .execute()
     )
     return {"ok": True, **created}

@@ -44,6 +44,7 @@ EXPECTED_TOOLS = {
     },
     "drive.write": {
         "drive_create_folder",
+        "drive_create_file",
         "drive_rename",
         "drive_move",
         "drive_share",

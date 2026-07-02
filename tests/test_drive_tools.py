@@ -138,6 +138,34 @@ def test_create_folder_nests_under_parent(fake_svc):
     assert body["parents"] == ["P"]
 
 
+# --- drive_create_file -------------------------------------------------------
+
+def test_create_file_defaults_to_markdown(fake_svc):
+    _create_returns(
+        fake_svc,
+        {"id": "M1", "name": "notes.md", "mimeType": "text/markdown", "parents": ["root"]},
+    )
+    out = drive_tools.drive_create_file("notes.md", "# hi")
+    assert out["ok"] is True
+    kwargs = fake_svc.files.return_value.create.call_args.kwargs
+    assert kwargs["body"] == {
+        "name": "notes.md",
+        "parents": ["root"],
+        "mimeType": "text/markdown",
+    }
+    # media_body carries the encoded content with the same mime type.
+    assert kwargs["media_body"].getbytes(0, 4) == b"# hi"
+    assert kwargs["media_body"].mimetype() == "text/markdown"
+
+
+def test_create_file_honors_mime_and_parent(fake_svc):
+    _create_returns(fake_svc, {"id": "M2", "name": "a.txt", "parents": ["P"]})
+    drive_tools.drive_create_file("a.txt", "body", mime_type="text/plain", parent_id="P")
+    body = fake_svc.files.return_value.create.call_args.kwargs["body"]
+    assert body["mimeType"] == "text/plain"
+    assert body["parents"] == ["P"]
+
+
 # --- drive_rename ------------------------------------------------------------
 
 def test_rename_sends_name_only(fake_svc):

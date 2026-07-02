@@ -484,3 +484,59 @@ Branding assets shipped to jadedviber.com (GitHub Pages, plain HTML):
 `/app/` (OAuth home page, H1 "JadedViber", explains purpose + scopes),
 `/privacy/`, `/terms/` (limited-use disclosure), and `snek-logo.png` (512×512
 mascot on #0a0a0a — transparent snek.png rendered white on Google's consent card).
+
+### Status check — 2026-06-23 (still on the stop-gap)
+
+The per-org Internal migration above remains **shelved/deferred**. Live state is
+still the single External/Testing client. Tokens still die ~7 days in Testing mode
+— that part stands, and a batch re-auth was run today (token mtimes all 2026-06-23).
+
+**CORRECTION (2026-06-23 PM) — earlier root-cause diagnosis was WRONG.** The
+"Sign in — continue to Elevated" popup-on-Claude-Code-startup was **NOT** gsuite.
+`gsuite serve` **cannot** open a browser — `auth.py` only calls `run_local_server(
+open_browser=True)` from the `gsuite auth` CLI, never from `serve`; on a stale token
+`serve`→`get_credentials`→`creds.refresh()` raises `invalid_grant`, it does not prompt.
+The earlier session was told a token "expired yesterday" and assumed gsuite checks/
+re-auths on startup — it does not.
+
+**Actual cause:** two LEGACY Google MCPs were still registered top-level in
+`~/.claude.json` long after gsuite replaced them (Phase 4/5) — `gmail`
+(`@gongrzhe/server-gmail-autoauth-mcp`, name = *autoauth*) and `google-drive`
+(`@piotr-agier/google-drive-mcp`, does Docs/Sheets/Slides = the popup's scope ask).
+Both are `npx` (unpinned → silent version bumps) and **auto-launch a browser OAuth
+flow on startup** when their own token is stale. Every Claude session spawned them;
+a full close-out + reboot cold-started them all at once → browser popup. Hidden in
+steady-state because sessions were left running for days. **Fix applied:**
+`claude mcp remove gmail` + `claude mcp remove google-drive`. gsuite's 4 instances
++ claude.ai hosted connectors fully cover Gmail/Drive/Docs/Sheets/Slides/Calendar.
+
+The recurring chore until migration (gsuite tokens, real ~7-day Testing expiry):
+
+```bash
+for a in elevated dax jaded point4; do
+  GSUITE_CONFIG_DIR=~/.config/gsuite-$a /Users/j/projects/gsuite/.venv/bin/gsuite auth
+done   # pick the matching account in the chooser each time
+```
+
+Per-account staleness this round: dax was 8d (already dead), jaded 6d, elevated/
+point4 ~1d. Re-auth order should lead with the oldest.
+
+### Cost to take `jaded` off the weekly-refresh treadmill
+
+`jaded423@gmail.com` is a **consumer** account → can't be Internal (Internal needs
+a Workspace org, and orgs need a domain — a @gmail.com can't be "converted").
+Options costed 2026-06-23:
+
+- **Google Workspace Business Starter** — ~$7/user/mo (~$84/yr) on a domain you own
+  (e.g. jadedviber.com). Has Gmail, so it satisfies the jaded MCP's `gmail.modify`/
+  `gmail.send` scopes. **But** it creates a NEW identity (`you@jadedviber.com`), not
+  jaded423@gmail.com — you'd migrate/forward the personal mailbox into it or point
+  the MCP at the new address.
+- **Cloud Identity Free** — $0, managed org + Internal OAuth on a domain, but **no
+  Gmail mailbox** → can't serve the gmail scopes → dead end for this profile.
+
+**Verdict:** ~$84/yr + a mailbox migration to kill ONE weekly popup. Not worth it
+unless jadedviber.com email is wanted anyway. Cheaper holdout fixes: keep weekly-
+refreshing just jaded, or drop its restricted scopes (`gmail.modify`/`drive`-write)
+so it can publish to Production free with no token expiry. The 3 Workspace accounts
+(elevated/dax/point4) remain the real win — Internal-eligible, permanent fix.
