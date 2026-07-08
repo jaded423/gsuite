@@ -1,6 +1,131 @@
-# gspace changelog
+---
+type: log
+title: gsuite changelog
+tags: [gsuite, changelog, history, log]
+related: [index]
+---
 
-All notable changes to the gspace in-house MCP server.
+# gsuite changelog
+
+All notable changes to the gsuite in-house MCP server.
+
+---
+
+## 2026-07-08 — Google Tasks + Calendar CRUD + Drive read + Gmail labels (+13 tools → 63)
+
+**What changed:**
+- **New `tools/tasks_tools.py`** — the scaffolded `tasks` feature finally has tools:
+  `tasklists_list`, `tasks_list` (hides completed by default), `tasks_create` (dateless-friendly,
+  `parent` for subtasks), `tasks_update` (title/notes/due + `completed` shortcut / explicit
+  `status`; reopening clears the completion stamp; `due=''` clears the date), `tasks_delete`.
+  Feature + `auth/tasks` scope were pre-staged; already enabled + granted on all 3 instances
+  (`missing_scopes: []`) → no re-consent.
+- **Calendar filled out** (`tools/calendar_tools.py`, 3 → 7 verbs): `calendar_get_event`,
+  `calendar_list_calendars` (read); `calendar_delete_event`, `calendar_respond_to_event` (RSVP,
+  patches only the self attendee). Existing `calendar.read`/`.write` scopes.
+- **Drive read** (`tools/drive_tools.py`): `drive_read_file` — Google-native Docs/Sheets/Slides
+  export to text/CSV; other files (PDF, txt, img) downloaded raw; utf-8 in `content` or base64
+  with `encoding='base64'`; `max_bytes` truncation. Closes Drive being write-only for non-native
+  files. `drive.read` scope.
+- **Gmail labels** (`tools/gmail_labels.py`, NEW): `gmail_list_labels` (read; surfaces the id↔name
+  map that `gmail_batch_modify`/`gmail_move_label` need) + `gmail_create_label` (`gmail.bulk_modify`
+  scope, clean 409-on-duplicate error).
+
+**Why:** driver was the trans/plaud meeting→action-items pipeline (dateless items → Google Tasks →
+Cody's Calendar sidebar). While in the file, audited the whole roster and closed the other
+no-re-consent gaps found: Calendar was half-built (couldn't even delete an event), Drive couldn't
+read file bytes, Gmail had no way to look up a label id.
+
+**Files modified:** `tools/tasks_tools.py` (new), `tools/gmail_labels.py` (new),
+`tools/calendar_tools.py`, `tools/drive_tools.py`, `tools/__init__.py`, `tests/` (+3 new test
+files, calendar/drive/registry updated). All under existing scopes — **no re-auth**. 142 tests pass.
+Restart each MCP instance to load the new tools.
+
+---
+
+## 2026-07-07 — Tier-2 doc slim-down + machine-contract tool roster
+
+**What changed:**
+- **Slimmed `CLAUDE.md` 558 → 247 lines.** Kept the live-operational content (feature-flag/
+  scope mechanics, multi-org OAuth model + per-org runbook + gotchas). Extracted the frozen
+  design proposal + dated phase build-log to a new **`docs/design-and-history.md`** (`type: log`).
+  The Gmail-filter-engine gotchas moved with it but are flagged *still authoritative*.
+- **New `docs/design-and-history.md`** — the archived "why"; dated tool counts (14, 37) kept as
+  point-in-time snapshots, not current.
+- **New `gsuite tools [--json]` CLI subcommand** (`cli.py`) — prints the live tool roster grouped
+  by feature, straight from the registry. This is the roster source of truth: no hand-maintained
+  `TOOLS.md`, `docs/index.md` cites the count + points at the command, `EXPECTED_TOOLS` guards drift.
+- Fixed stale `gspace` → `gsuite` in kept CLAUDE.md operational text + the changelog H1.
+- `docs/index.md` updated: history-page row, roster-command note, current-state framing.
+
+**Why:** gsuite is the **pilot Tier-2 repo** for the wiki/brain memory architecture. Global's
+light-touch pass (frontmatter + index) deliberately left the 558-line proposal-as-CLAUDE.md as a
+separate `/sum` job; this is that pass. The roster pattern (code-defined lists have ONE home = code;
+docs point, never re-tabulate; a test guards drift) generalized and was kicked up to global's Tier-2
+convention (analogue: elevatedWeb `sheets_desc.py` HEADER already drifted 4/5/6 vs its prose).
+
+**Files modified:**
+- `CLAUDE.md` — slimmed to current-state + pointers.
+- `docs/design-and-history.md` — NEW, extracted proposal + build-log.
+- `gsuite/cli.py` — `tools` subcommand.
+- `docs/index.md` — roster note + history row + conventions update.
+
+---
+
+## 2026-07-07 — Gmail attachments, HTML, threading, thread-read, send-draft (+3 tools → 51)
+
+**What changed** (`tools/gmail_compose.py`, `tools/gmail_messages.py`):
+- **New `gmail_get_attachment`** (`gmail.read`) — download an attachment by
+  `message_id`+`attachment_id` to a local `save_path`; optional `drive_folder_id`
+  also uploads a copy to Drive.
+- **New `gmail_get_thread`** (`gmail.read`) — read a whole conversation in one call
+  (`{thread_id, count, messages}`), compact per-message summaries; `include_body`
+  opt-in, `max_messages` cap. Far cheaper than N `gmail_read_message` calls.
+- **New `gmail_send_draft`** (`gmail.send`) — send an existing draft by `draft_id`
+  (closes the create/update/delete/**send** gap).
+- **`gmail_read_message`** now returns an `attachments` array (`filename`,
+  `mimeType`, `size`, `attachmentId`) when a message has any — feeds
+  `gmail_get_attachment`.
+- **`gmail_send_message` / `gmail_create_draft` / `gmail_update_draft`** gained
+  `body_type=html`, `attachments` (local paths) + `drive_file_ids` (Drive
+  download-then-attach via `MIMEMultipart`/`MIMEBase`), and reply threading
+  (`thread_id` + `in_reply_to`/`references` → `In-Reply-To`/`References` headers).
+  `_build_raw` rewritten from single-part `MIMEText` to conditional multipart.
+
+**Why:** email portion couldn't attach/receive files, send HTML, or thread
+replies. All common real-mail operations.
+
+**No scope change** — `gmail.send` already rides `gmail.modify`, which covers
+attachment upload/download and threaded send. No OAuth re-consent. Tool total
+48 → 51 across 15 feature flags. New tests: `tests/test_gmail_messages.py`;
+`EXPECTED_TOOLS` in `tests/test_registry.py` updated for the 3 new tools.
+
+---
+
+## 2026-07-06 — Detach gsuite-dax instance (Dax Distro dissolved)
+
+**What changed:**
+- Removed the `gsuite-dax` user-scope MCP instance (`claude mcp remove gsuite-dax -s user`).
+  3 instances remain: `gsuite-elevated`, `gsuite-jaded`, `gsuite-point4`.
+- De-looped `dax` so it can't be re-registered: dropped `dax:gsuite-dax` from the `for pair`
+  loop in `install.sh`, the `[dax]` entry from `DIR_FOR` + the accounts list in
+  `setup-org-clients.sh`, and `dax` from the weekly re-auth loop in `CLAUDE.md` (with a note
+  pointing at the teardown bundle). Also trimmed dax from the header comments.
+- Config dir `~/.config/gsuite-dax/` (dead `oauth-client.json` + `tokens.json`) moved to
+  `~/projects/graveyard/dax-teardown-2026-07/config-gsuite-dax/`.
+
+**Why:**
+- Dax Distro dissolved; the Dax Workspace account is gone, and a stale token made the
+  instance a recurring re-auth annoyance. Detaching removes it cleanly.
+
+**Note:** gsuite-dax never had a Dax-specific GCP client — all four instances shared the one
+Elevated Desktop client `664420379329-…` in project `ancient-sunspot-471815-g9`, so there was
+no Dax-side GCP cleanup. The other 3 instances are unaffected (verified `claude mcp list`).
+
+**Files modified:**
+- `install.sh` — removed `dax:gsuite-dax` from the registration loop + header comment
+- `setup-org-clients.sh` — removed `[dax]` DIR_FOR entry, accounts list, header comment
+- `CLAUDE.md` — re-auth loop 4→3 accounts + teardown note
 
 ---
 

@@ -242,3 +242,54 @@ def test_list_delete_later_tool_lists_folder(fake_svc):
     out = drive_tools.drive_list_delete_later()
     assert out["ok"] is True
     assert out["count"] == 2
+
+
+# --- drive_read_file ---------------------------------------------------------
+
+def test_read_file_utf8_text(fake_svc):
+    fake_svc.files.return_value.get.return_value.execute.return_value = {
+        "id": "F", "name": "notes.txt", "mimeType": "text/plain", "size": "5",
+    }
+    fake_svc.files.return_value.get_media.return_value.execute.return_value = b"hello"
+    out = drive_tools.drive_read_file(file_id="F")
+    assert out["content"] == "hello"
+    assert out["encoding"] == "utf-8"
+    assert out["truncated"] is False
+
+
+def test_read_file_google_doc_exports(fake_svc):
+    fake_svc.files.return_value.get.return_value.execute.return_value = {
+        "id": "D", "name": "Doc", "mimeType": "application/vnd.google-apps.document",
+    }
+    fake_svc.files.return_value.export_media.return_value.execute.return_value = b"body text"
+    out = drive_tools.drive_read_file(file_id="D")
+    assert out["content"] == "body text"
+    kwargs = fake_svc.files.return_value.export_media.call_args.kwargs
+    assert kwargs["mimeType"] == "text/plain"
+
+
+def test_read_file_binary_base64(fake_svc):
+    fake_svc.files.return_value.get.return_value.execute.return_value = {
+        "id": "P", "name": "x.png", "mimeType": "image/png",
+    }
+    fake_svc.files.return_value.get_media.return_value.execute.return_value = b"\xff\xd8\xff"
+    out = drive_tools.drive_read_file(file_id="P")
+    assert out["encoding"] == "base64"
+
+
+def test_read_file_truncates(fake_svc):
+    fake_svc.files.return_value.get.return_value.execute.return_value = {
+        "id": "F", "name": "big.txt", "mimeType": "text/plain",
+    }
+    fake_svc.files.return_value.get_media.return_value.execute.return_value = b"abcdefghij"
+    out = drive_tools.drive_read_file(file_id="F", max_bytes=3)
+    assert out["truncated"] is True
+    assert out["content"] == "abc"
+
+
+def test_read_file_rejects_unexportable_native(fake_svc):
+    fake_svc.files.return_value.get.return_value.execute.return_value = {
+        "id": "FORM", "name": "F", "mimeType": "application/vnd.google-apps.form",
+    }
+    out = drive_tools.drive_read_file(file_id="FORM")
+    assert out["ok"] is False

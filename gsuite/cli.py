@@ -6,6 +6,7 @@ Subcommands:
   features list                Show every known feature flag and its state.
   features enable <name>       Turn a feature on.
   features disable <name>      Turn a feature off.
+  tools [--json]               Print the live tool roster grouped by feature.
   serve                        Run the stdio MCP server (same as entry point).
 
 The server process never calls `auth`; it's a separate, user-initiated action
@@ -77,6 +78,35 @@ def _cmd_features_disable(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_tools(args: argparse.Namespace) -> int:
+    """Print the live tool registry grouped by feature.
+
+    The registry (code) is the single source of truth for the tool roster — no
+    hand-maintained TOOLS.md. `docs/index.md` cites the count and points here;
+    `tests/test_registry.py::EXPECTED_TOOLS` guards against drift.
+    """
+    from collections import defaultdict
+
+    from .tools import all_tools
+
+    by_feature: dict[str, list[str]] = defaultdict(list)
+    for t in all_tools():
+        by_feature[t.feature].append(t.name)
+    total = sum(len(v) for v in by_feature.values())
+
+    if args.json:
+        print(json.dumps({f: sorted(by_feature[f]) for f in sorted(by_feature)}, indent=2))
+        return 0
+
+    print(f"{total} tools across {len(by_feature)} feature flags\n")
+    for feature in sorted(by_feature):
+        names = sorted(by_feature[feature])
+        print(f"{feature} ({len(names)})")
+        for name in names:
+            print(f"  {name}")
+    return 0
+
+
 def _cmd_serve(_args: argparse.Namespace) -> int:
     from .server import main as server_main
 
@@ -105,6 +135,10 @@ def _build_parser() -> argparse.ArgumentParser:
     fsp = fsub.add_parser("disable")
     fsp.add_argument("name", choices=sorted(FEATURE_SCOPES))
     fsp.set_defaults(fn=_cmd_features_disable)
+
+    sp = sub.add_parser("tools", help="Print the live tool roster grouped by feature")
+    sp.add_argument("--json", action="store_true", help="Emit JSON instead of text")
+    sp.set_defaults(fn=_cmd_tools)
 
     sp = sub.add_parser("serve", help="Run the stdio MCP server")
     sp.set_defaults(fn=_cmd_serve)

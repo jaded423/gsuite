@@ -9,12 +9,16 @@ EXPECTED_TOOLS = {
     "gmail.read": {
         "gmail_search_messages",
         "gmail_read_message",
+        "gmail_get_attachment",
+        "gmail_get_thread",
+        "gmail_list_labels",
     },
     "gmail.send": {
         "gmail_create_draft",
         "gmail_update_draft",
         "gmail_delete_draft",
         "gmail_send_message",
+        "gmail_send_draft",
     },
     "gmail.filters": {
         "gmail_list_filters",
@@ -31,6 +35,7 @@ EXPECTED_TOOLS = {
         "gmail_batch_modify",
         "gmail_reclassify_filter",
         "gmail_move_label",
+        "gmail_create_label",
     },
     "gmail.classify": {
         "gmail_classify_message",
@@ -41,6 +46,7 @@ EXPECTED_TOOLS = {
         "drive_list_folder",
         "drive_list_delete_later",
         "drive_get_metadata",
+        "drive_read_file",
     },
     "drive.write": {
         "drive_create_folder",
@@ -63,8 +69,24 @@ EXPECTED_TOOLS = {
     },
     "slides.read": {"slides_read"},
     "slides.write": {"slides_create", "slides_add_slide", "slides_replace_text"},
-    "calendar.read": {"calendar_list_events"},
-    "calendar.write": {"calendar_create_event", "calendar_update_event"},
+    "calendar.read": {
+        "calendar_list_events",
+        "calendar_get_event",
+        "calendar_list_calendars",
+    },
+    "calendar.write": {
+        "calendar_create_event",
+        "calendar_update_event",
+        "calendar_delete_event",
+        "calendar_respond_to_event",
+    },
+    "tasks": {
+        "tasklists_list",
+        "tasks_list",
+        "tasks_create",
+        "tasks_update",
+        "tasks_delete",
+    },
 }
 
 

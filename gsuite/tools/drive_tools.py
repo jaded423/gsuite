@@ -12,6 +12,7 @@ extra fields explicitly.
 
 from __future__ import annotations
 
+import base64
 import logging
 from typing import Any
 
@@ -26,6 +27,14 @@ log = logging.getLogger("gsuite.tools.drive")
 
 DEFAULT_FIELDS = "files(id,name,mimeType,modifiedTime,parents,owners(emailAddress))"
 VALID_SHARE_ROLES = {"reader", "commenter", "writer"}
+
+# Google-native docs have no downloadable bytes — they must be *exported* to a
+# concrete format. Map each editor type to the text export we return.
+GOOGLE_NATIVE_EXPORT = {
+    "application/vnd.google-apps.document": "text/plain",
+    "application/vnd.google-apps.spreadsheet": "text/csv",
+    "application/vnd.google-apps.presentation": "text/plain",
+}
 
 
 def _svc():
@@ -165,6 +174,69 @@ def drive_get_metadata(file_id: str) -> dict[str, Any]:
         .execute()
     )
     return {"ok": True, **meta}
+
+
+@tool(
+    name="drive_read_file",
+    feature="drive.read",
+    description=(
+        "Read a Drive file's content by id. Google-native Docs/Sheets/Slides "
+        "are exported to text (Docs→plain, Sheets→CSV) — for richer structure "
+        "prefer `docs_read`/`sheets_read`. Other files (PDF, txt, CSV, images) "
+        "are downloaded raw. UTF-8 text is returned in `content`; binary is "
+        "base64 in `content` with `encoding='base64'`. Truncated to `max_bytes` "
+        "(default 1 MB); `truncated=True` when it was cut."
+    ),
+    input_schema={
+        "type": "object",
+        "required": ["file_id"],
+        "properties": {
+            "file_id": {"type": "string"},
+            "max_bytes": {
+                "type": "integer",
+                "default": 1_000_000,
+                "minimum": 1,
+                "maximum": 10_000_000,
+            },
+        },
+    },
+)
+def drive_read_file(file_id: str, max_bytes: int = 1_000_000) -> dict[str, Any]:
+    svc = _svc()
+    meta = with_retry(
+        lambda: svc.files()
+        .get(fileId=file_id, fields="id,name,mimeType,size", supportsAllDrives=True)
+        .execute()
+    )
+    mime = meta.get("mimeType", "")
+    if mime in GOOGLE_NATIVE_EXPORT:
+        export_mime = GOOGLE_NATIVE_EXPORT[mime]
+        data: bytes = with_retry(
+            lambda: svc.files().export_media(fileId=file_id, mimeType=export_mime).execute()
+        )
+    elif mime.startswith("application/vnd.google-apps."):
+        return error(f"cannot read Google-native type {mime!r} (no text export)")
+    else:
+        data = with_retry(
+            lambda: svc.files().get_media(fileId=file_id, supportsAllDrives=True).execute()
+        )
+    truncated = len(data) > max_bytes
+    data = data[:max_bytes]
+    out: dict[str, Any] = {
+        "ok": True,
+        "id": file_id,
+        "name": meta.get("name"),
+        "mimeType": mime,
+        "bytes": len(data),
+        "truncated": truncated,
+    }
+    try:
+        out["content"] = data.decode("utf-8")
+        out["encoding"] = "utf-8"
+    except UnicodeDecodeError:
+        out["content"] = base64.b64encode(data).decode("ascii")
+        out["encoding"] = "base64"
+    return out
 
 
 # --- write -------------------------------------------------------------------

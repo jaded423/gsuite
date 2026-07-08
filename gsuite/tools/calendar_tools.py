@@ -214,3 +214,140 @@ def calendar_update_event(
         .execute()
     )
     return {"ok": True, "calendar_id": calendar_id, **_event_to_summary(ev)}
+
+
+@tool(
+    name="calendar_get_event",
+    feature="calendar.read",
+    description="Fetch a single event by id from a calendar (default `primary`).",
+    input_schema={
+        "type": "object",
+        "required": ["event_id"],
+        "properties": {
+            "calendar_id": {"type": "string", "default": "primary"},
+            "event_id": {"type": "string"},
+        },
+    },
+)
+def calendar_get_event(event_id: str, calendar_id: str = "primary") -> dict[str, Any]:
+    svc = _svc()
+    ev = with_retry(
+        lambda: svc.events().get(calendarId=calendar_id, eventId=event_id).execute()
+    )
+    return {"ok": True, "calendar_id": calendar_id, **_event_to_summary(ev)}
+
+
+@tool(
+    name="calendar_list_calendars",
+    feature="calendar.read",
+    description=(
+        "List the calendars on the user's calendar list (id, summary, whether "
+        "it's `primary`, and the user's `accessRole`). Use this to resolve a "
+        "`calendar_id` for the other calendar tools."
+    ),
+    input_schema={"type": "object", "properties": {}},
+)
+def calendar_list_calendars() -> dict[str, Any]:
+    svc = _svc()
+    resp = with_retry(lambda: svc.calendarList().list().execute())
+    items = resp.get("items", []) or []
+    return {
+        "ok": True,
+        "count": len(items),
+        "calendars": [
+            {
+                "id": c.get("id"),
+                "summary": c.get("summary"),
+                "primary": c.get("primary", False),
+                "access_role": c.get("accessRole"),
+            }
+            for c in items
+        ],
+    }
+
+
+@tool(
+    name="calendar_delete_event",
+    feature="calendar.write",
+    description=(
+        "Delete (cancel) an event by id. Set `send_updates='all'` to notify "
+        "attendees of the cancellation; default `'none'`."
+    ),
+    input_schema={
+        "type": "object",
+        "required": ["event_id"],
+        "properties": {
+            "calendar_id": {"type": "string", "default": "primary"},
+            "event_id": {"type": "string"},
+            "send_updates": {
+                "type": "string",
+                "enum": ["all", "externalOnly", "none"],
+                "default": "none",
+            },
+        },
+    },
+)
+def calendar_delete_event(
+    event_id: str, calendar_id: str = "primary", send_updates: str = "none"
+) -> dict[str, Any]:
+    svc = _svc()
+    with_retry(
+        lambda: svc.events()
+        .delete(calendarId=calendar_id, eventId=event_id, sendUpdates=send_updates)
+        .execute()
+    )
+    return {"ok": True, "calendar_id": calendar_id, "event_id": event_id, "deleted": True}
+
+
+@tool(
+    name="calendar_respond_to_event",
+    feature="calendar.write",
+    description=(
+        "RSVP to an event you're invited to: set your own attendee response to "
+        "`accepted`, `declined`, or `tentative`. Only your attendee entry is "
+        "changed. Errors if you're not on the attendee list."
+    ),
+    input_schema={
+        "type": "object",
+        "required": ["event_id", "response"],
+        "properties": {
+            "calendar_id": {"type": "string", "default": "primary"},
+            "event_id": {"type": "string"},
+            "response": {
+                "type": "string",
+                "enum": ["accepted", "declined", "tentative"],
+            },
+            "send_updates": {
+                "type": "string",
+                "enum": ["all", "externalOnly", "none"],
+                "default": "all",
+            },
+        },
+    },
+)
+def calendar_respond_to_event(
+    event_id: str,
+    response: str,
+    calendar_id: str = "primary",
+    send_updates: str = "all",
+) -> dict[str, Any]:
+    svc = _svc()
+    ev = with_retry(
+        lambda: svc.events().get(calendarId=calendar_id, eventId=event_id).execute()
+    )
+    attendees = ev.get("attendees", []) or []
+    me = next((a for a in attendees if a.get("self")), None)
+    if me is None:
+        return error("you are not an attendee of this event — cannot RSVP")
+    me["responseStatus"] = response
+    updated = with_retry(
+        lambda: svc.events()
+        .patch(
+            calendarId=calendar_id,
+            eventId=event_id,
+            body={"attendees": attendees},
+            sendUpdates=send_updates,
+        )
+        .execute()
+    )
+    return {"ok": True, "calendar_id": calendar_id, "response": response, **_event_to_summary(updated)}

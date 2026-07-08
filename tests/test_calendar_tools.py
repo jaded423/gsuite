@@ -97,3 +97,65 @@ def test_update_event_patches_only_provided_fields(fake_svc):
     assert out["summary"] == "Renamed"
     body = fake_svc.events.return_value.patch.call_args.kwargs["body"]
     assert body == {"summary": "Renamed"}
+
+
+# --- new verbs: get / list_calendars / delete / respond ----------------------
+
+def test_get_event(fake_svc):
+    fake_svc.events.return_value.get.return_value.execute.return_value = {
+        "id": "E", "summary": "One", "start": {}, "end": {},
+    }
+    out = calendar_tools.calendar_get_event(event_id="E")
+    assert out["id"] == "E"
+    assert fake_svc.events.return_value.get.call_args.kwargs["eventId"] == "E"
+
+
+def test_list_calendars(fake_svc):
+    fake_svc.calendarList.return_value.list.return_value.execute.return_value = {
+        "items": [
+            {"id": "primary", "summary": "Me", "primary": True, "accessRole": "owner"},
+            {"id": "team@x", "summary": "Team", "accessRole": "writer"},
+        ]
+    }
+    out = calendar_tools.calendar_list_calendars()
+    assert out["count"] == 2
+    assert out["calendars"][0]["primary"] is True
+    assert out["calendars"][1]["primary"] is False
+
+
+def test_delete_event(fake_svc):
+    fake_svc.events.return_value.delete.return_value.execute.return_value = ""
+    out = calendar_tools.calendar_delete_event(event_id="E", send_updates="all")
+    assert out["deleted"] is True
+    kwargs = fake_svc.events.return_value.delete.call_args.kwargs
+    assert kwargs["eventId"] == "E"
+    assert kwargs["sendUpdates"] == "all"
+
+
+def test_respond_to_event_sets_self_response(fake_svc):
+    fake_svc.events.return_value.get.return_value.execute.return_value = {
+        "id": "E", "summary": "Invite", "start": {}, "end": {},
+        "attendees": [
+            {"email": "other@x.com", "responseStatus": "accepted"},
+            {"email": "me@x.com", "self": True, "responseStatus": "needsAction"},
+        ],
+    }
+    fake_svc.events.return_value.patch.return_value.execute.return_value = {
+        "id": "E", "summary": "Invite", "start": {}, "end": {},
+    }
+    out = calendar_tools.calendar_respond_to_event(event_id="E", response="accepted")
+    assert out["ok"] is True
+    body = fake_svc.events.return_value.patch.call_args.kwargs["body"]
+    me = [a for a in body["attendees"] if a.get("self")][0]
+    assert me["responseStatus"] == "accepted"
+    # other attendee untouched
+    other = [a for a in body["attendees"] if not a.get("self")][0]
+    assert other["responseStatus"] == "accepted"
+
+
+def test_respond_to_event_not_attendee(fake_svc):
+    fake_svc.events.return_value.get.return_value.execute.return_value = {
+        "id": "E", "start": {}, "end": {}, "attendees": [{"email": "x@y.com"}],
+    }
+    out = calendar_tools.calendar_respond_to_event(event_id="E", response="declined")
+    assert out["ok"] is False

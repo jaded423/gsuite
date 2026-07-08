@@ -18,10 +18,12 @@ from . import gmail_bulk  # noqa: F401
 from . import gmail_classify  # noqa: F401
 from . import gmail_compose  # noqa: F401
 from . import gmail_filters  # noqa: F401
+from . import gmail_labels  # noqa: F401
 from . import gmail_messages  # noqa: F401
 from . import gmail_rules  # noqa: F401
 from . import sheets_tools  # noqa: F401
 from . import slides_tools  # noqa: F401
+from . import tasks_tools  # noqa: F401
 
 # Back-compat: old callers imported ALL_TOOLS as a module attribute.
 ALL_TOOLS = all_tools()
