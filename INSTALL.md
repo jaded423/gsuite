@@ -1,3 +1,10 @@
+---
+type: reference
+title: gsuite install guide
+tags: [gsuite, install, setup, oauth, guide]
+related: [index, changelog]
+---
+
 # Installing gsuite — guide for Claude
 
 This guide is written for Claude (Claude Code in a terminal, or any Claude with shell access) performing the install on a Mac for a new user. If you are Claude: follow the steps in order, verify each before moving on, and ask the user only at the marked decision points.

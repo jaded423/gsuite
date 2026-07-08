@@ -5,7 +5,6 @@
 # multi-org architecture each account authenticates against its OWN GCP project:
 #
 #   elevated  → Internal app in the Elevated Workspace GCP project
-#   dax       → Internal app in the Dax Workspace GCP project
 #   point4    → Internal app in the Point4 Workspace GCP project
 #   jaded     → External app (publishing status: Testing) in danger-zone-007
 #               (consumer Gmail can't be Internal — no Workspace org)
@@ -21,7 +20,7 @@
 # and enable the 7 APIs first (see enable-apis.sh).
 #
 # USAGE:
-#   ./setup-org-clients.sh elevated=~/Downloads/el.json dax=~/Downloads/dax.json \
+#   ./setup-org-clients.sh elevated=~/Downloads/el.json \
 #                          point4=~/Downloads/p4.json jaded=~/Downloads/jaded.json
 #   (any subset of accounts; omit the ones you're not changing)
 #
@@ -36,14 +35,13 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 
 declare -A DIR_FOR=(
   [elevated]="$HOME/.config/gsuite-elevated"
-  [dax]="$HOME/.config/gsuite-dax"
   [point4]="$HOME/.config/gsuite-point4"
   [jaded]="$HOME/.config/gsuite-jaded"
 )
 
 if [[ $# -eq 0 ]]; then
   echo "usage: $0 <account>=<client.json> [<account>=<client.json> ...]" >&2
-  echo "accounts: elevated dax point4 jaded" >&2
+  echo "accounts: elevated point4 jaded" >&2
   exit 64
 fi
 
