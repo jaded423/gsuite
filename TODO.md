@@ -50,24 +50,17 @@
       `./check-oauth.sh`/`bash check-oauth.sh` (fine, low prio) or add a `sh`-safe
       guard. Same risk in `setup-org-clients.sh` (also uses `declare -A`).
 
-- [ ] **`/log` the 2026-07-07 session** once satisfied — Gmail email expansion
-      (attachments, HTML, threading, `gmail_get_attachment`/`gmail_send_draft`/
-      `gmail_get_thread`, +3 tools → 51) + the Tier-2 doc slim-down (CLAUDE.md 558→~250,
-      history extracted to `docs/design-and-history.md`, `gsuite tools` roster command).
-      Routes to gsuite. Changelog entry already written; `/log` for the paper trail.
+- [x] **`/log` the 2026-07-07 session.** DONE 2026-07-08 — paper trail confirmed complete:
+      both the 07-07 (Gmail expansion + doc slim-down) and 07-08 (Tasks/Calendar/Drive/labels)
+      entries live in `docs/changelog.md`. `/log` also synced the global routing-map count
+      (`~/.claude/docs/changelog.md` entry for the 51→63 pointer). No duplicate entry needed.
 
-- [ ] **Commit + push gsuite.** Uncommitted across two sessions:
-      • 2026-07-07: `tools/gmail_compose.py`, `gmail_messages.py`, `cli.py`,
-        `tests/test_gmail_messages.py` (new), `tests/test_registry.py`, `CLAUDE.md`,
-        `docs/{index,changelog,design-and-history}.md`.
-      • 2026-07-08 (Tasks + Calendar/Drive/labels): `tools/tasks_tools.py` (new),
-        `tools/gmail_labels.py` (new), `tools/calendar_tools.py`, `tools/drive_tools.py`,
-        `tools/__init__.py`, `tests/test_tasks_tools.py` + `test_gmail_labels.py` (new),
-        `tests/test_{calendar,drive}_tools.py`, `tests/test_registry.py`, `TODO.md`,
-        `graveyard/TODO-archive.md` (new). Also touched OUTSIDE gsuite: `~/.claude/CLAUDE.md`,
-        `~/projects/mcp/wiki/components/gsuite.md` (tool-count 51→63 sync).
-      ⚠ Working tree ALSO has pre-existing WIP from another session (`install.sh`,
-      `setup-org-clients.sh`) — do NOT clobber; commit selectively.
+- [x] **Commit + push gsuite.** DONE 2026-07-08 — snapshot push (whole mcp hub + children).
+      Two gsuite commits: `d25806c` (Dax removal on install.sh/setup-org-clients.sh/INSTALL.md,
+      the pre-existing WIP) + `6b31b92` (07-07 Gmail expansion + 07-08 Tasks/Calendar/Drive/
+      labels + docs). Pushed to `jaded423/gsuite` master. Cross-repo count-sync pointers also
+      pushed: `mcp` (`d313498`, folded into its wiki-buildout commit); `~/.claude` edits left
+      for the manual global cycle (Tier-0, outside mcp scope).
 
 - [ ] **Contacts / People resolve tool** (`people_search`, name→address — e.g. "Cody"
       → cody@elevatedtrading.com). Draft-to-name is constant friction. **Cost: NEW People
