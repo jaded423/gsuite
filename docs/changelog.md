@@ -11,6 +11,76 @@ All notable changes to the gsuite in-house MCP server.
 
 ---
 
+## 2026-07-27 — Classifier key file moves to the shared key store
+
+**What changed:**
+- `gmail_classify.py`'s `KEY_FILE` is now **`~/.secrets/anthropic_api_key`** (dir 700, file 600),
+  was `~/.anthropic_api_key` in the home root.
+
+**Why:**
+- Part of the global `ANTHROPIC_API_KEY` rotation + key-store move (T0 changelog 2026-07-27):
+  one key, one location shared with `scripts/bin/gitBackup.sh` and point4pi, so rotating is a
+  single file edit.
+
+**Files modified:**
+- `gsuite/tools/gmail_classify.py:48` — `KEY_FILE` path
+
+**Technical notes:**
+- Resolution order is unchanged — `ANTHROPIC_API_KEY` env first, then the file — and the existing
+  docstring rationale still holds verbatim: the key is deliberately not exported globally, same as
+  the Google OAuth tokens living in a file under `~/.config`. Only the path moved.
+- The classify tools are the only gsuite code that needs an Anthropic key; every other tool is
+  unaffected by a rotation.
+- Verified the new path resolves and matches the store's fingerprint.
+
+---
+
+## 2026-07-25 — Calendar learns dates *and* times; attendees notified by default
+
+**What changed** (`tools/calendar_tools.py`, no new tools, no re-consent):
+
+- **All-day events work.** The body hardcoded `{"dateTime": …}`, so a date-only value 400'd.
+  `start`/`end` now accept three shapes and pick the representation to match:
+  `2026-07-28` → all-day `{"date": …}` · `2026-07-28T09:00` → timed, stamped with the
+  calendar's own timezone · `2026-07-28T09:00:00-05:00` (or `…Z`) → passed through.
+  No more improvised midnight→midnight blocks with a hardcoded `America/Chicago`.
+- **`end` is now optional.** All-day defaults to one day (Google's end is exclusive, so
+  `start`+1); timed defaults to `duration_minutes`, default 30. An all-day `end` on or before
+  the start is read as "this one day" rather than 400'ing.
+- **New `timezone` param** (IANA). Only consulted for timed events; when omitted, the
+  calendar's own timezone is read once and cached per process — a guess is never used.
+- **Attendees are notified by default.** `send_updates` defaulted to `"none"`, so any caller
+  that passed `attendees` and forgot it created an event nobody was told about — in the meeting
+  app that instruction lived only in a prompt sentence, one model slip from silence. Unset now
+  resolves to `"all"` when attendees are present, `"none"` when they aren't; passing it
+  explicitly still wins either way. Responses echo the choice as `notified`.
+- **`calendar_update_event` got the same parsing**, plus: patching one side of the pair reads
+  the event back (Calendar validates the pair, not the field you sent), moving only `start`
+  keeps the existing length, and flipping all-day ↔ timed nulls the stale key so the merge
+  doesn't leave both `date` and `dateTime` set.
+- **`_event_to_summary`** now reports `all_day` and `time_zone`.
+
+Bad input is rejected before the API call with a message that names the fix (mixed
+date/datetime shapes, end ≤ start, unparseable strings). +23 tests (34 in the calendar file,
+**165 repo-wide**).
+
+**Why:** both were blocking the meeting app's switch to event-by-default for action items —
+Tasks has no attendee field, so every dated deliverable that became a task lost its notify
+path (proved 2026-07-24: 3 tasks created, `Only me`, nobody told). Unblocks the 9:00am
+time-dropdown work on the meeting side.
+
+**Live-verified 2026-07-25** on gsuite-brown: 6/6 cases created + deleted, Google stored the
+all-day case as `{"date": "2026-08-03"}` → `{"date": "2026-08-04"}` (a real all-day event, not a
+timed block). Read-only check on gsuite-elevated: `_calendar_timezone("primary")` →
+`America/Chicago`, so a bare `2026-08-06T09:00` builds `9:00–9:30 America/Chicago` — the meeting
+app can send a wall-clock time and know nothing about zones.
+
+**Rollout:** anything spawning a fresh server per run (`claude -p`, so the meeting app) gets
+this immediately. Long-lived sessions — an open Claude Code session, Claude Desktop — keep
+serving the old schema until restarted.
+
+---
+
 ## 2026-07-08 — Google Tasks + Calendar CRUD + Drive read + Gmail labels (+13 tools → 63)
 
 **What changed:**

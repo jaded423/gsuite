@@ -13,7 +13,19 @@ from gsuite.tools import calendar_tools
 def fake_svc(monkeypatch):
     svc = MagicMock()
     monkeypatch.setattr(calendar_tools, "_svc", lambda: svc)
+    calendar_tools._TZ_CACHE.clear()
+    svc.calendars.return_value.get.return_value.execute.return_value = {
+        "id": "primary", "timeZone": "America/Chicago",
+    }
     return svc
+
+
+def _insert_body(svc):
+    return svc.events.return_value.insert.call_args.kwargs["body"]
+
+
+def _patch_body(svc):
+    return svc.events.return_value.patch.call_args.kwargs["body"]
 
 
 def test_list_events_passes_time_window(fake_svc):
@@ -67,7 +79,11 @@ def test_create_event_builds_body(fake_svc):
     assert body["summary"] == "Demo"
     assert body["description"] == "desc"
     assert body["attendees"] == [{"email": "guest@x.com"}]
-    assert kwargs["sendUpdates"] == "none"
+    # an offset-carrying timestamp is passed through untouched
+    assert body["start"] == {"dateTime": "2026-05-01T10:00:00-05:00"}
+    assert body["end"] == {"dateTime": "2026-05-01T11:00:00-05:00"}
+    # attendees present and send_updates unset -> they get invited
+    assert kwargs["sendUpdates"] == "all"
 
 
 def test_create_event_send_updates_override(fake_svc):
@@ -84,6 +100,161 @@ def test_create_event_send_updates_override(fake_svc):
     assert kwargs["sendUpdates"] == "all"
 
 
+# --- time parsing: all-day ---------------------------------------------------
+
+@pytest.fixture
+def created(fake_svc):
+    """Minimal insert response so create() can flatten a summary."""
+    fake_svc.events.return_value.insert.return_value.execute.return_value = {
+        "id": "N", "start": {}, "end": {},
+    }
+    return fake_svc
+
+
+def test_date_only_start_makes_an_all_day_event(created):
+    calendar_tools.calendar_create_event(summary="Deadline", start="2026-07-28")
+    body = _insert_body(created)
+    assert body["start"] == {"date": "2026-07-28"}
+    # Google's all-day end is exclusive: one day means the next date
+    assert body["end"] == {"date": "2026-07-29"}
+    created.calendars.return_value.get.assert_not_called()
+
+
+def test_all_day_end_on_the_start_date_is_bumped(created):
+    calendar_tools.calendar_create_event(
+        summary="Deadline", start="2026-07-28", end="2026-07-28"
+    )
+    body = _insert_body(created)
+    assert body["end"] == {"date": "2026-07-29"}
+
+
+def test_multi_day_all_day_end_is_left_alone(created):
+    calendar_tools.calendar_create_event(
+        summary="Trip", start="2026-07-28", end="2026-07-31"
+    )
+    body = _insert_body(created)
+    assert body["start"] == {"date": "2026-07-28"}
+    assert body["end"] == {"date": "2026-07-31"}
+
+
+# --- time parsing: timed -----------------------------------------------------
+
+def test_floating_datetime_gets_the_calendar_timezone(created):
+    calendar_tools.calendar_create_event(summary="Standup", start="2026-07-28T09:00")
+    body = _insert_body(created)
+    assert body["start"] == {
+        "dateTime": "2026-07-28T09:00:00", "timeZone": "America/Chicago",
+    }
+    assert body["end"] == {
+        "dateTime": "2026-07-28T09:30:00", "timeZone": "America/Chicago",
+    }
+
+
+def test_explicit_timezone_skips_the_calendar_lookup(created):
+    calendar_tools.calendar_create_event(
+        summary="Standup", start="2026-07-28T09:00", timezone="America/New_York"
+    )
+    body = _insert_body(created)
+    assert body["start"]["timeZone"] == "America/New_York"
+    created.calendars.return_value.get.assert_not_called()
+
+
+def test_calendar_timezone_is_cached_across_calls(created):
+    for _ in range(3):
+        calendar_tools.calendar_create_event(summary="x", start="2026-07-28T09:00")
+    assert created.calendars.return_value.get.call_count == 1
+
+
+def test_offset_datetime_needs_no_timezone(created):
+    calendar_tools.calendar_create_event(
+        summary="Standup", start="2026-07-28T09:00:00-05:00"
+    )
+    body = _insert_body(created)
+    assert "timeZone" not in body["start"]
+    assert body["end"]["dateTime"] == "2026-07-28T09:30:00-05:00"
+    created.calendars.return_value.get.assert_not_called()
+
+
+def test_z_suffix_is_accepted(created):
+    calendar_tools.calendar_create_event(summary="UTC", start="2026-07-28T14:00:00Z")
+    body = _insert_body(created)
+    assert body["start"]["dateTime"] == "2026-07-28T14:00:00+00:00"
+    assert "timeZone" not in body["start"]
+
+
+def test_duration_minutes_sets_the_end(created):
+    calendar_tools.calendar_create_event(
+        summary="Long", start="2026-07-28T09:00", duration_minutes=90
+    )
+    assert _insert_body(created)["end"]["dateTime"] == "2026-07-28T10:30:00"
+
+
+# --- time parsing: rejections ------------------------------------------------
+
+def test_mixed_date_and_datetime_is_rejected(fake_svc):
+    out = calendar_tools.calendar_create_event(
+        summary="x", start="2026-07-28", end="2026-07-28T10:00"
+    )
+    assert out["ok"] is False
+    assert "same shape" in out["error"]
+    fake_svc.events.return_value.insert.assert_not_called()
+
+
+def test_end_before_start_is_rejected(fake_svc):
+    out = calendar_tools.calendar_create_event(
+        summary="x", start="2026-07-28T10:00", end="2026-07-28T09:00"
+    )
+    assert out["ok"] is False
+    fake_svc.events.return_value.insert.assert_not_called()
+
+
+def test_unparseable_start_is_rejected(fake_svc):
+    out = calendar_tools.calendar_create_event(summary="x", start="next tuesday")
+    assert out["ok"] is False
+    assert "ISO 8601" in out["error"]
+    fake_svc.events.return_value.insert.assert_not_called()
+
+
+# --- notification defaults ---------------------------------------------------
+
+def test_attendees_are_notified_by_default(created):
+    out = calendar_tools.calendar_create_event(
+        summary="x", start="2026-07-28T09:00", attendees=["g@x.com"]
+    )
+    assert created.events.return_value.insert.call_args.kwargs["sendUpdates"] == "all"
+    assert out["notified"] == "all"
+
+
+def test_explicit_none_still_adds_attendees_silently(created):
+    calendar_tools.calendar_create_event(
+        summary="x", start="2026-07-28T09:00", attendees=["g@x.com"], send_updates="none"
+    )
+    assert created.events.return_value.insert.call_args.kwargs["sendUpdates"] == "none"
+
+
+def test_no_attendees_notifies_nobody(created):
+    calendar_tools.calendar_create_event(summary="x", start="2026-07-28T09:00")
+    assert created.events.return_value.insert.call_args.kwargs["sendUpdates"] == "none"
+
+
+# --- summary flattening ------------------------------------------------------
+
+def test_summary_flags_all_day_and_timezone():
+    out = calendar_tools._event_to_summary(
+        {"id": "E", "start": {"date": "2026-07-28"}, "end": {"date": "2026-07-29"}}
+    )
+    assert out["all_day"] is True
+    assert out["start"] == "2026-07-28"
+
+    timed = calendar_tools._event_to_summary({
+        "id": "E",
+        "start": {"dateTime": "2026-07-28T09:00:00", "timeZone": "America/Chicago"},
+        "end": {"dateTime": "2026-07-28T09:30:00"},
+    })
+    assert timed["all_day"] is False
+    assert timed["time_zone"] == "America/Chicago"
+
+
 def test_update_event_rejects_empty_patch():
     out = calendar_tools.calendar_update_event(event_id="E")
     assert out["ok"] is False
@@ -97,6 +268,76 @@ def test_update_event_patches_only_provided_fields(fake_svc):
     assert out["summary"] == "Renamed"
     body = fake_svc.events.return_value.patch.call_args.kwargs["body"]
     assert body == {"summary": "Renamed"}
+    # a metadata-only patch never reads the event back
+    fake_svc.events.return_value.get.assert_not_called()
+
+
+@pytest.fixture
+def patched(fake_svc):
+    """An existing 09:00–09:30 timed event, and a patch response to flatten."""
+    fake_svc.events.return_value.get.return_value.execute.return_value = {
+        "id": "E",
+        "start": {"dateTime": "2026-07-28T09:00:00-05:00"},
+        "end": {"dateTime": "2026-07-28T09:30:00-05:00"},
+    }
+    fake_svc.events.return_value.patch.return_value.execute.return_value = {
+        "id": "E", "start": {}, "end": {},
+    }
+    return fake_svc
+
+
+def test_moving_start_alone_keeps_the_existing_length(patched):
+    calendar_tools.calendar_update_event(event_id="E", start="2026-07-28T14:00:00-05:00")
+    body = _patch_body(patched)
+    assert body["start"]["dateTime"] == "2026-07-28T14:00:00-05:00"
+    assert body["end"]["dateTime"] == "2026-07-28T14:30:00-05:00"
+
+
+def test_duration_minutes_overrides_the_existing_length(patched):
+    calendar_tools.calendar_update_event(
+        event_id="E", start="2026-07-28T14:00:00-05:00", duration_minutes=120
+    )
+    assert _patch_body(patched)["end"]["dateTime"] == "2026-07-28T16:00:00-05:00"
+
+
+def test_patching_end_alone_reads_the_current_start(patched):
+    calendar_tools.calendar_update_event(event_id="E", end="2026-07-28T11:00:00-05:00")
+    body = _patch_body(patched)
+    assert body["start"]["dateTime"] == "2026-07-28T09:00:00-05:00"
+    assert body["end"]["dateTime"] == "2026-07-28T11:00:00-05:00"
+
+
+def test_flipping_timed_to_all_day_clears_datetime(patched):
+    calendar_tools.calendar_update_event(event_id="E", start="2026-07-28")
+    body = _patch_body(patched)
+    # patch merges nested objects, so the stale key must be explicitly nulled
+    assert body["start"] == {"date": "2026-07-28", "dateTime": None}
+    assert body["end"] == {"date": "2026-07-29", "dateTime": None}
+
+
+def test_flipping_all_day_to_timed_clears_date(fake_svc):
+    fake_svc.events.return_value.get.return_value.execute.return_value = {
+        "id": "E", "start": {"date": "2026-07-28"}, "end": {"date": "2026-07-29"},
+    }
+    fake_svc.events.return_value.patch.return_value.execute.return_value = {
+        "id": "E", "start": {}, "end": {},
+    }
+    calendar_tools.calendar_update_event(event_id="E", start="2026-07-28T09:00")
+    body = _patch_body(fake_svc)
+    assert body["start"] == {
+        "dateTime": "2026-07-28T09:00:00", "timeZone": "America/Chicago", "date": None,
+    }
+
+
+def test_update_rejects_a_bad_time_without_patching(patched):
+    out = calendar_tools.calendar_update_event(event_id="E", start="whenever")
+    assert out["ok"] is False
+    patched.events.return_value.patch.assert_not_called()
+
+
+def test_replacing_attendees_notifies_by_default(patched):
+    calendar_tools.calendar_update_event(event_id="E", attendees=["g@x.com"])
+    assert patched.events.return_value.patch.call_args.kwargs["sendUpdates"] == "all"
 
 
 # --- new verbs: get / list_calendars / delete / respond ----------------------

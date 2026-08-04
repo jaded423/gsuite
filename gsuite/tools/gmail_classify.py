@@ -21,6 +21,7 @@ import logging
 import os
 import re
 import time
+from pathlib import Path
 from typing import Any
 
 from anthropic import Anthropic
@@ -44,13 +45,26 @@ def _gmail():
     return build_service("gmail")
 
 
+KEY_FILE = Path.home() / ".secrets" / "anthropic_api_key"
+
+
 def _anthropic_client() -> Anthropic:
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    """Build a client, preferring the env var but falling back to a key file.
+
+    The file is the intended home. A shell export is inherited by every child
+    process in the session, so the key is deliberately not exported globally --
+    same reasoning as the Google OAuth tokens, which live in a file under
+    ~/.config and are read only by the code that needs them.
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key and KEY_FILE.is_file():
+        api_key = KEY_FILE.read_text().strip()
+    if not api_key:
         raise RuntimeError(
-            "ANTHROPIC_API_KEY not set. Classification tools need it; "
-            "other tools don't."
+            f"No Anthropic API key: set ANTHROPIC_API_KEY or create {KEY_FILE} "
+            "(chmod 600). Classification tools need it; other tools don't."
         )
-    return Anthropic()
+    return Anthropic(api_key=api_key)
 
 
 # --- body extraction ---------------------------------------------------------
