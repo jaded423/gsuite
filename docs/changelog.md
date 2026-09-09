@@ -11,6 +11,32 @@ All notable changes to the gsuite in-house MCP server.
 
 ---
 
+## 2026-09-09 — INSTALL.md: "see everything, draft, send nothing" profile for new users
+
+**What changed:**
+- INSTALL.md rewritten around a default access profile for a new user (Cody's install):
+  all read features on, `gmail.send` on **for drafts only**, every write flag off, and a
+  Claude Code `~/.claude/settings.json` permissions block that auto-allows the 18 read
+  tools, prompts on each draft, and hard-denies `gmail_send_message` / `gmail_send_draft`
+  + the three `tasks_*` write tools. Plus a `~/.claude/CLAUDE.md` house-rules block, a
+  three-check verify (read works / draft prompts / send refused), and a trust-ladder
+  section for widening access later.
+- Fixed the stale install command: `pip install -e ./gsuite` → `pip install -e .`
+  (the package moved to the repo root 2026-06-15; the old line would have failed).
+- Step 3 now says which client an @elevatedtrading.com user gets (the Elevated
+  Internal app — no test-user step, no "unverified" screen).
+
+**Why:**
+- `gmail.send` is one flag for drafts AND sending (drafts need `gmail.modify`, and
+  Google has no draft-only scope), so "draft but never send" cannot be expressed in
+  feature flags alone. The Claude Code deny list is the enforcing layer; the doc says
+  so explicitly and warns that the consent screen will still read "read, compose,
+  send, and permanently delete".
+
+**Files modified:** `INSTALL.md`, `docs/changelog.md`, `TODO.md`
+
+---
+
 ## 2026-07-27 — Classifier key file moves to the shared key store
 
 **What changed:**

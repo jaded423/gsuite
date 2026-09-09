@@ -1,5 +1,15 @@
 # gsuite TODO
 
+- [ ] **Cynthia install follow-up + streamline INSTALL.md before Cody's install.** (added 2026-08-31)
+      Cynthia set up 2026-08-31 on Claude Desktop + CLI (Ghostty); Gmail working.
+      Remaining: enable her non-gmail features (`gsuite features enable …` + re-run
+      `gsuite auth` — the gmail-only first pass was the default flags, not a bug),
+      review her session transcript for install friction (GitHub account detour,
+      Ghostty/CLI bootstrap), fold fixes into INSTALL.md.
+      resume: 2026-09-09 INSTALL.md restructured for Cody's install — read-all/draft-only
+      profile (§0/§4/§7/§8), stale `pip install -e ./gsuite` fixed, 3-check verify,
+      trust ladder. Still open: Cynthia's non-gmail features + her transcript review.
+
 - [ ] **⏸ SHELVED 2026-06-17 — OAuth migration to per-org Internal apps.**
       Full design + resume runbook live in `CLAUDE.md` → "Multi-org OAuth
       architecture" (see the SHELVED banner at its top). Brain:
