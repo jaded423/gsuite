@@ -6,9 +6,10 @@
       `gsuite auth` — the gmail-only first pass was the default flags, not a bug),
       review her session transcript for install friction (GitHub account detour,
       Ghostty/CLI bootstrap), fold fixes into INSTALL.md.
-      resume: 2026-09-09 INSTALL.md restructured for Cody's install — read-all/draft-only
-      profile (§0/§4/§7/§8), stale `pip install -e ./gsuite` fixed, 3-check verify,
-      trust ladder. Still open: Cynthia's non-gmail features + her transcript review.
+      resume: 2026-09-09 INSTALL.md restructured for Cody's install — ALL features on,
+      Claude Code is the gate (reads silent / writes prompt / send denied, §0/§4/§7/§8),
+      stale `pip install -e ./gsuite` fixed, 3-check verify, trust ladder = allow-list
+      edits. Still open: Cynthia's non-gmail features + her transcript review.
 
 - [ ] **⏸ SHELVED 2026-06-17 — OAuth migration to per-org Internal apps.**
       Full design + resume runbook live in `CLAUDE.md` → "Multi-org OAuth

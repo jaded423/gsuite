@@ -11,27 +11,31 @@ All notable changes to the gsuite in-house MCP server.
 
 ---
 
-## 2026-09-09 — INSTALL.md: "see everything, draft, send nothing" profile for new users
+## 2026-09-09 — INSTALL.md: "see everything, ask before every change, never send" profile
 
 **What changed:**
 - INSTALL.md rewritten around a default access profile for a new user (Cody's install):
-  all read features on, `gmail.send` on **for drafts only**, every write flag off, and a
-  Claude Code `~/.claude/settings.json` permissions block that auto-allows the 18 read
-  tools, prompts on each draft, and hard-denies `gmail_send_message` / `gmail_send_draft`
-  + the three `tasks_*` write tools. Plus a `~/.claude/CLAUDE.md` house-rules block, a
-  three-check verify (read works / draft prompts / send refused), and a trust-ladder
-  section for widening access later.
+  **every feature enabled** (full read/write scopes granted once), with Claude Code's
+  `~/.claude/settings.json` as the gate — the 21 read-only tools auto-allowed, every
+  write tool left unlisted so it **prompts per call**, and `gmail_send_message` /
+  `gmail_send_draft` hard-denied. Plus a `~/.claude/CLAUDE.md` house-rules block, a
+  three-check verify (read silent / draft prompts / send refused), and a trust ladder
+  where each rung is one line moved to `allow` — no re-auth with Google ever.
 - Fixed the stale install command: `pip install -e ./gsuite` → `pip install -e .`
   (the package moved to the repo root 2026-06-15; the old line would have failed).
-- Step 3 now says which client an @elevatedtrading.com user gets (the Elevated
-  Internal app — no test-user step, no "unverified" screen).
+- Step 3 names which client an @elevatedtrading.com user gets (the Elevated Internal
+  app — no test-user step, no "unverified" screen). Claude Desktop marked "not for this
+  profile" (no deny list there).
 
 **Why:**
-- `gmail.send` is one flag for drafts AND sending (drafts need `gmail.modify`, and
-  Google has no draft-only scope), so "draft but never send" cannot be expressed in
-  feature flags alone. The Claude Code deny list is the enforcing layer; the doc says
-  so explicitly and warns that the consent screen will still read "read, compose,
-  send, and permanently delete".
+- Joshua's call: Cody gets the full toolset (Sheets/Drive writes included) but gated
+  until he's comfortable. Gating in Claude Code instead of feature flags means levelling
+  up is a settings edit, not a flag+re-consent dance. `gmail.send` is one flag for
+  drafts AND sending (drafts need `gmail.modify`; Google has no draft-only scope), so
+  the deny list is the only place "never send" can live. The doc warns that the consent
+  screen shows full read/write for everything and says where the real gate is.
+- The first draft of this rewrite (same day) used read-only scopes + flag-level locks;
+  superseded within the hour by the prompt-gated design above.
 
 **Files modified:** `INSTALL.md`, `docs/changelog.md`, `TODO.md`
 
