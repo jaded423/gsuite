@@ -9,7 +9,9 @@
       resume: 2026-09-09 INSTALL.md restructured for Cody's install — ALL features on,
       Claude Code is the gate (reads silent / writes prompt / send denied, §0/§4/§7/§8),
       stale `pip install -e ./gsuite` fixed, 3-check verify, trust ladder = allow-list
-      edits. Still open: Cynthia's non-gmail features + her transcript review.
+      edits. **Cody installed 2026-09-09** from the doc unattended, CLI + Desktop, both
+      verified (inbox triage + LiveRef inventory total). Still open: Cynthia's
+      non-gmail features + her transcript review (she's on the old gmail-only defaults).
 
 - [ ] **⏸ SHELVED 2026-06-17 — OAuth migration to per-org Internal apps.**
       Full design + resume runbook live in `CLAUDE.md` → "Multi-org OAuth

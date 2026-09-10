@@ -37,6 +37,12 @@ All notable changes to the gsuite in-house MCP server.
 - The first draft of this rewrite (same day) used read-only scopes + flag-level locks;
   superseded within the hour by the prompt-gated design above.
 
+**Outcome (same day):** Cody's Claude ran the guide unattended; Joshua supplied only the
+Elevated Internal client file. Working in Claude Code AND Claude Desktop, verified with an
+inbox-triage question and a LiveRef "total if we sold all Current Inventory" Sheets read.
+Desktop was registered despite the guide's caveat — on Desktop only the house rules stand
+between Claude and the send tool. Brain: `cody-gsuite-install`.
+
 **Files modified:** `INSTALL.md`, `docs/changelog.md`, `TODO.md`
 
 ---
