@@ -91,6 +91,8 @@ Everything should now read enabled except **`gmail.classify`** — leave that of
 .venv/bin/gsuite auth
 ```
 
+**The user runs this themselves, not their Claude.** It blocks until the browser consent flow finishes, and Claude Code's shell tool times out after two minutes, which kills the flow mid-consent. Inside Claude Code, type it with the `!` prefix (`! /path/to/.venv/bin/gsuite auth`) so it runs in the user's own terminal. Claude can run the `features` commands in § 4; it should stop before this step and print the full path for the user to type.
+
 A browser opens. The user signs into the Google account they want Claude to access and reviews the consent screen. It will list full read/write access for Gmail, Drive, Docs, Sheets, Slides, Calendar and Tasks — see § 0 for why that is expected and where the real gate is. A "Google hasn't verified this app" interstitial appears only on the External test app, not the Elevated Internal app; if it does appear, click **Continue**.
 
 Verify:
