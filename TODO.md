@@ -6,10 +6,9 @@
       Cody installed from it unattended same day (CLI + Desktop, verified). Cynthia's
       non-gmail read features enabled + re-authed same day (parallel session; the re-auth
       surfaced the shell-timeout gotcha that became the §5 note).
-- [ ] **Decide: put Cynthia on Cody's gate?** (added 2026-09-09) She's on read-all + the
-      Gmail defaults — `gmail.send`/filters/bulk_modify on, NO `~/.claude/settings.json`
-      deny list, no house rules — so her Claude can send and mass-label today. Cody's
-      profile = INSTALL.md §7 + §8. Joshua's call; if yes, paste §7/§8 to her.
+- [x] **Decide: put Cynthia on Cody's gate?** (added 2026-09-09; decided 2026-09-09: NO)
+      Deliberate difference, not drift: Cynthia is less skeptical and holds less sensitive
+      data, so she had no draft-only stipulation before install. Cody's gate stays Cody's.
 
 - [ ] **⏸ SHELVED 2026-06-17 — OAuth migration to per-org Internal apps.**
       Full design + resume runbook live in `CLAUDE.md` → "Multi-org OAuth
