@@ -1,17 +1,15 @@
 # gsuite TODO
 
-- [ ] **Cynthia install follow-up + streamline INSTALL.md before Cody's install.** (added 2026-08-31)
-      Cynthia set up 2026-08-31 on Claude Desktop + CLI (Ghostty); Gmail working.
-      Remaining: enable her non-gmail features (`gsuite features enable …` + re-run
-      `gsuite auth` — the gmail-only first pass was the default flags, not a bug),
-      review her session transcript for install friction (GitHub account detour,
-      Ghostty/CLI bootstrap), fold fixes into INSTALL.md.
-      resume: 2026-09-09 INSTALL.md restructured for Cody's install — ALL features on,
-      Claude Code is the gate (reads silent / writes prompt / send denied, §0/§4/§7/§8),
-      stale `pip install -e ./gsuite` fixed, 3-check verify, trust ladder = allow-list
-      edits. **Cody installed 2026-09-09** from the doc unattended, CLI + Desktop, both
-      verified (inbox triage + LiveRef inventory total). Still open: Cynthia's
-      non-gmail features + her transcript review (she's on the old gmail-only defaults).
+- [x] **Cynthia install follow-up + streamline INSTALL.md before Cody's install.** (added 2026-08-31; done 2026-09-09)
+      Evidence: INSTALL.md rewritten (profile §0, explicit flags §4, gate §7/§8, 3-check
+      verify, trust ladder, stale pip path fixed, `! gsuite auth` timeout note in §5).
+      Cody installed from it unattended same day (CLI + Desktop, verified). Cynthia's
+      non-gmail read features enabled + re-authed same day (parallel session; the re-auth
+      surfaced the shell-timeout gotcha that became the §5 note).
+- [ ] **Decide: put Cynthia on Cody's gate?** (added 2026-09-09) She's on read-all + the
+      Gmail defaults — `gmail.send`/filters/bulk_modify on, NO `~/.claude/settings.json`
+      deny list, no house rules — so her Claude can send and mass-label today. Cody's
+      profile = INSTALL.md §7 + §8. Joshua's call; if yes, paste §7/§8 to her.
 
 - [ ] **⏸ SHELVED 2026-06-17 — OAuth migration to per-org Internal apps.**
       Full design + resume runbook live in `CLAUDE.md` → "Multi-org OAuth

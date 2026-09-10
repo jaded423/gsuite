@@ -43,6 +43,13 @@ inbox-triage question and a LiveRef "total if we sold all Current Inventory" She
 Desktop was registered despite the guide's caveat — on Desktop only the house rules stand
 between Claude and the send tool. Brain: `cody-gsuite-install`.
 
+**Cynthia (same day, parallel session):** her 2026-08-31 install had been gmail-only (default
+flags). Non-gmail read features enabled + re-authed. The re-auth exposed a real gotcha —
+`gsuite auth` blocks on the browser flow and Claude Code's shell tool times out at 2 min,
+killing it mid-consent — now a § 5 note: the person runs it with the `!` prefix, Claude stops
+after the flags. She is on read-all + Gmail defaults (send on, no Claude Code gate); whether
+she gets Cody's § 7/§ 8 gate is an open TODO. Brain: `cynthia-gsuite-state`.
+
 **Files modified:** `INSTALL.md`, `docs/changelog.md`, `TODO.md`
 
 ---
