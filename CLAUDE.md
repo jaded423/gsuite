@@ -242,7 +242,7 @@ Options costed 2026-06-23:
 - **Cloud Identity Free** — $0, managed org + Internal OAuth on a domain, but **no
   Gmail mailbox** → can't serve the gmail scopes → dead end for this profile.
 
-**Verdict:** ~$84/yr + a mailbox migration to kill ONE weekly popup. Not worth it
+**Verdict (2026-06-23):** ~$84/yr + a mailbox migration to kill ONE weekly popup. Not worth it — **SUPERSEDED 2026-09-16:** the jadedviber.com Workspace org turned out to already exist (created ~Nov 2025, subscription cancelled) and was re-subscribed to Business Starter on 2026-09-16 because an always-on "home email" scheduler needs a non-expiring Internal OAuth app. DONE the same night: the bare **`gsuite`** instance (default `~/.config/gsuite/`, no `GSUITE_CONFIG_DIR`) = j@jadedviber.com on an Internal Desktop client in GCP project `mcps` — non-expiring, all 7 APIs verified (brain `gsuite-home-instance`). Roster is now `gsuite` (jadedviber, Internal) · `gsuite-elevated` (Internal, dies with the account end of Sept 2026) · `gsuite-jaded` + `gsuite-brown` (External-Testing, weekly reauth) · `gsuite-point4` removed 2026-09-16
 unless jadedviber.com email is wanted anyway. Cheaper holdout fixes: keep weekly-
 refreshing just jaded, or drop its restricted scopes (`gmail.modify`/`drive`-write)
 so it can publish to Production free with no token expiry. The 3 Workspace accounts

@@ -13,6 +13,7 @@ Design goals (per CLAUDE.md):
 from __future__ import annotations
 
 import json
+import os
 import logging
 import threading
 import time
@@ -133,7 +134,11 @@ def run_auth_flow(scopes: list[str]) -> Credentials:
     """
     client = _load_client_config()
     flow = InstalledAppFlow.from_client_config(client, scopes=scopes)
-    creds = flow.run_local_server(port=0, open_browser=True)
+    # Headless hosts: set GSUITE_AUTH_PORT=<n>, forward it (`ssh -L n:localhost:n host`),
+    # then open the printed URL in a browser on the forwarding machine. The redirect
+    # to localhost:<n> rides the tunnel back to the server. Unset = random port + browser.
+    port = int(os.environ.get("GSUITE_AUTH_PORT", "0") or 0)
+    creds = flow.run_local_server(port=port, open_browser=(port == 0))
     _write_tokens(_creds_to_tokens(creds, _read_tokens()))
     return creds
 
