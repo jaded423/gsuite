@@ -11,6 +11,20 @@ All notable changes to the gsuite in-house MCP server.
 
 ---
 
+## 2026-09-16 — `GSUITE_AUTH_PORT` for headless hosts; the bare `gsuite` instance (jadedviber, Internal, non-expiring)
+
+**What changed:**
+- `gsuite/auth.py`: `run_auth_flow` honors **`GSUITE_AUTH_PORT`** — fixed callback port + no browser launch when set (unset = random port + browser, unchanged). Headless recipe: `ssh -t -L <p>:localhost:<p> host 'GSUITE_AUTH_PORT=<p> gsuite auth'`, open the printed URL on the laptop; the localhost redirect rides the tunnel back. **`ssh -t` is required** or Python block-buffers the URL until exit.
+- New instance **`gsuite`** (bare name) = **j@jadedviber.com** on the DEFAULT `~/.config/gsuite/` (no env var). OAuth client: GCP project `mcps` (jadedviber.com org), consent **Internal**, Desktop client `gsuite` → token never expires. Registered user-scope; all 7 APIs verified.
+- `CLAUDE.md`: the 2026-06-23 "Workspace not worth it" verdict marked SUPERSEDED + roster line: `gsuite` (jadedviber, Internal) · `gsuite-elevated` (Internal, dies with the account end of Sept) · `gsuite-jaded` + `gsuite-brown` (External-Testing, weekly reauth) · `gsuite-point4` removed.
+- Second consent for the same client on **ubuntu/VM101** (own token, never copied) — the "home email" sender; see homeLab changelog.
+
+**Why:** an unattended scheduler on the homelab needs a refresh token that survives the week; only an Internal app gives that, and Internal needs a Workspace org — jadedviber.com now is one.
+
+**Files modified:** `gsuite/auth.py`, `CLAUDE.md`. Gotcha hit: a killed first auth attempt kept holding the port → `Address already in use`; `pkill -f "[b]in/gsuite auth"` on the host.
+
+---
+
 ## 2026-09-09 — INSTALL.md: "see everything, ask before every change, never send" profile
 
 **What changed:**
