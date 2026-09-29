@@ -16,7 +16,7 @@ related: [index, changelog, design-and-history]
 > mechanics, and multi-org OAuth setup. Pointers for everything else:
 > - **Live tool roster** — run `gsuite tools` (or `--json`); the code registry is the
 >   source of truth, no hand-kept list. Count + catalog: [docs/index.md](docs/index.md)
->   (**63 tools / 16 feature flags** as of 2026-07-08).
+>   (**66 tools / 16 feature flags** as of 2026-09-29).
 > - **Version history** — [docs/changelog.md](docs/changelog.md).
 > - **The "why" (original design proposal + phase build-log), plus the Gmail-filter-engine
 >   gotchas** — [docs/design-and-history.md](docs/design-and-history.md). Those gotchas
