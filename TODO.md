@@ -75,4 +75,21 @@
       label IDs (UNREAD / INBOX / STARRED), and `gmail_list_labels` (added 2026-07-08) makes
       those IDs discoverable. Only add dedicated verbs if the batch_modify path proves clumsy.
 
+- [x] **`gmail_list_drafts` — find existing drafts** (added 2026-09-29). Search drafts
+      with Gmail query syntax → {draft_id, message_id, thread_id, to, subject, snippet,
+      attachments}. The missing handle: today I can only edit drafts I created myself.
+      Origin: Joshua's hand-started reply to Ollie (Be Well offer) — couldn't strip the
+      two carried-over signature logos because no tool could find the draft's id.
+- [x] **`gmail_edit_draft` — surgical in-place draft edit** (added 2026-09-29). Fetch the
+      draft's raw MIME, change ONLY what's asked (remove attachments by filename, add
+      local/Drive attachments, find→replace text in plain+HTML parts, set To/Cc/Bcc/
+      Subject), write it back. Keeps the formatted quote, threading headers, inline
+      parts. `gmail_update_draft` = full rebuild, which is what would have mangled
+      Ollie's quoted email.
+- [x] **`drive_upload_file` — binary upload from a local path** (added 2026-09-29).
+      `drive_create_file` is text-only; uploading the signed offer PDF needed a
+      carrier-draft workaround (attach → `gmail_get_attachment` drive_folder_id → delete).
+      done 2026-09-29: all three built + live-verified on gsuite-brown (Ollie draft logos
+      removed in place; test PNG uploaded + soft-deleted). See changelog.
+
 > Completed items archived → [graveyard/TODO-archive.md](graveyard/TODO-archive.md).

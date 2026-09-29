@@ -11,6 +11,23 @@ All notable changes to the gsuite in-house MCP server.
 
 ---
 
+## 2026-09-29 — edit the drafts Joshua started (`gmail_list_drafts` + `gmail_edit_draft`); binary Drive uploads (`drive_upload_file`)
+
+**What changed:**
+- `gmail_list_drafts` (feature `gmail.send`): drafts.list with Gmail query syntax → draft_id + to/cc/subject/snippet + attachments (filename, size, inline). The handle that was missing: before it, only drafts Claude created were editable.
+- `gmail_edit_draft` (feature `gmail.send`): loads the draft's raw MIME, changes ONLY what's asked, writes it back on the same draft + thread. Ops: `remove_attachments` (exact or glob; removing an inline image also strips its `<img src="cid:…">`), `add_attachments` / `add_drive_file_ids`, `replace_text` across plain + HTML (tries Gmail's `&#39;` and Python's `&#x27;` apostrophe spellings), `to`/`cc`/`bcc`/`subject`. Any unmatched pattern or find string → error, nothing written. `dry_run` previews.
+- `drive_upload_file` (feature `drive.write`): local path → Drive as-is via `MediaFileUpload` (resumable past 5 MB, MIME guessed). `drive_create_file` stays text-only and now points here for binaries.
+- `_drive_fetch` split out of `_drive_part` so the edit path reuses the Drive download.
+- Tests: `tests/test_gmail_drafts.py` (11, fixture mirrors a real Gmail reply: alternative + related inline logo + PDF); registry expectations updated. 176 pass.
+
+**Why:** Joshua hand-started his reply to Ollie (Be Well offer) with the signed PDF; Gmail carried Ollie's two signature logos along as attachments. No tool could find the draft's id, and `gmail_update_draft` would have flattened the formatted quote. Earlier the same morning, saving the signed PDF to Drive needed a carrier-draft workaround (attach → `gmail_get_attachment` drive_folder_id → delete).
+
+**Live-verified (gsuite-brown):** list found the Ollie draft; dry-run → apply removed `Outlook-*.png`, same draft_id/thread, In-Reply-To/References intact, PDF byte size unchanged. Upload: 297-byte PNG → Drive, then soft-deleted to `_delete-later`.
+
+**Files modified:** `gsuite/tools/gmail_compose.py`, `gsuite/tools/drive_tools.py`, `tests/test_gmail_drafts.py` (new), `tests/test_registry.py`, `TODO.md`.
+
+---
+
 ## 2026-09-16 — `GSUITE_AUTH_PORT` for headless hosts; the bare `gsuite` instance (jadedviber, Internal, non-expiring)
 
 **What changed:**

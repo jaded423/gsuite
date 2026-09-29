@@ -19,6 +19,8 @@ EXPECTED_TOOLS = {
         "gmail_delete_draft",
         "gmail_send_message",
         "gmail_send_draft",
+        "gmail_list_drafts",
+        "gmail_edit_draft",
     },
     "gmail.filters": {
         "gmail_list_filters",
@@ -51,6 +53,7 @@ EXPECTED_TOOLS = {
     "drive.write": {
         "drive_create_folder",
         "drive_create_file",
+        "drive_upload_file",
         "drive_rename",
         "drive_move",
         "drive_share",

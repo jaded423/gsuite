@@ -14,9 +14,11 @@ from __future__ import annotations
 
 import base64
 import logging
+import mimetypes
+import os
 from typing import Any
 
-from googleapiclient.http import MediaInMemoryUpload
+from googleapiclient.http import MediaFileUpload, MediaInMemoryUpload
 
 from ..auth import with_retry
 from . import drive_common
@@ -276,8 +278,9 @@ def drive_create_folder(name: str, parent_id: str = "root") -> dict[str, Any]:
         "the stored type (default 'text/markdown' so `.md` notes upload as raw "
         "Markdown, not a converted Google Doc). Parent defaults to My Drive root; "
         "pass `parent_id` to nest in a folder. For a native Google Doc/Sheet/Slide "
-        "use the docs_/sheets_/slides_ create tools instead. Returns id, name, "
-        "mimeType, parents, webViewLink."
+        "use the docs_/sheets_/slides_ create tools instead; for a local binary "
+        "file (PDF, image) use drive_upload_file. Returns id, name, mimeType, "
+        "parents, webViewLink."
     ),
     input_schema={
         "type": "object",
@@ -308,6 +311,55 @@ def drive_create_file(
             body=body,
             media_body=media,
             fields="id,name,mimeType,parents,webViewLink",
+            supportsAllDrives=True,
+        )
+        .execute()
+    )
+    return {"ok": True, **created}
+
+
+@tool(
+    name="drive_upload_file",
+    feature="drive.write",
+    description=(
+        "Upload a local file (any type — PDF, image, zip, …) to Drive as-is, no "
+        "conversion. `name` defaults to the file's basename; `mime_type` is "
+        "guessed from the extension. Parent defaults to My Drive root. Use "
+        "drive_create_file for text content you're composing. Returns id, "
+        "name, mimeType, size, parents, webViewLink."
+    ),
+    input_schema={
+        "type": "object",
+        "required": ["path"],
+        "properties": {
+            "path": {"type": "string", "description": "Local filesystem path to upload."},
+            "name": {"type": "string", "description": "Drive file name; defaults to the basename."},
+            "parent_id": {"type": "string", "default": "root"},
+            "mime_type": {"type": "string", "description": "Override the guessed MIME type."},
+        },
+    },
+)
+def drive_upload_file(
+    path: str,
+    name: str | None = None,
+    parent_id: str = "root",
+    mime_type: str | None = None,
+) -> dict[str, Any]:
+    if not os.path.isfile(path):
+        return error(f"file not found: {path}")
+    mime_type = mime_type or mimetypes.guess_type(path)[0] or "application/octet-stream"
+    svc = _svc()
+    body = {"name": name or os.path.basename(path), "parents": [parent_id]}
+    # Resumable past 5 MB so large files survive a flaky connection.
+    media = MediaFileUpload(
+        path, mimetype=mime_type, resumable=os.path.getsize(path) > 5 * 1024 * 1024
+    )
+    created = with_retry(
+        lambda: svc.files()
+        .create(
+            body=body,
+            media_body=media,
+            fields="id,name,mimeType,size,parents,webViewLink",
             supportsAllDrives=True,
         )
         .execute()
