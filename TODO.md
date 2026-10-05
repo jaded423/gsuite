@@ -14,8 +14,11 @@
       Idea captured mid-thought, not yet looked into further. Reasoning + the
       three-state table: brain `gsuite-external-published-unverified`.
       • Why now: `gsuite-jaded` still rides Desktop client `664420379329-…` in
-        `ancient-sunspot-471815-g9` (the Elevated project — Joshua has no access since
-        2026-09-30, so it can't be published and dies if anyone there deletes it).
+        `ancient-sunspot-471815-g9` (live, per `check-oauth.sh` 2026-10-05). The June
+        notes call it "the Elevated project" — UNCONFIRMED who owns it. First check:
+        does it show in the console project picker as jaded423@gmail or j@jadedviber?
+        If yes → just publish it as is. If it is Elevated's, Joshua has had no access
+        since 2026-09-30 and it dies if anyone there deletes it → rebuild as below.
         `gsuite-brown` is not in `check-oauth.sh`'s roster; assumed same client — check.
       • Plan: NEW project under the jadedviber.com org, owned by j@jadedviber.com (not
         `mcps` — its consent screen is Internal, one screen per project; not the
