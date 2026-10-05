@@ -10,6 +10,28 @@
       Deliberate difference, not drift: Cynthia is less skeptical and holds less sensitive
       data, so she had no draft-only stipulation before install. Cody's gate stays Cody's.
 
+- [ ] **Move the two Gmail instances (jaded, brown) to a PUBLISHED External app Joshua owns — ends the weekly reauth.** (added 2026-10-05)
+      Idea captured mid-thought, not yet looked into further. Reasoning + the
+      three-state table: brain `gsuite-external-published-unverified`.
+      • Why now: `gsuite-jaded` still rides Desktop client `664420379329-…` in
+        `ancient-sunspot-471815-g9` (the Elevated project — Joshua has no access since
+        2026-09-30, so it can't be published and dies if anyone there deletes it).
+        `gsuite-brown` is not in `check-oauth.sh`'s roster; assumed same client — check.
+      • Plan: NEW project under the jadedviber.com org, owned by j@jadedviber.com (not
+        `mcps` — its consent screen is Internal, one screen per project; not the
+        personal `danger-zone-007`) → consent screen **External** → **Publish app**
+        (In production, do NOT submit verification) → Desktop client →
+        `setup-org-clients.sh jaded=… brown=…` (add brown to both scripts' rosters)
+        → reauth each once.
+      • UNTESTED claim to prove: an unverified in-production app with restricted Gmail
+        scopes keeps its refresh token past 7 days (cost: one "unverified app" screen
+        per auth, 100-user cap). Test = reauth one account, confirm alive on day 8.
+        Fallback is "Back to testing".
+      • When proven: fix `CLAUDE.md` → "Multi-org OAuth architecture" and
+        `mcp/wiki/concepts/oauth-model.md` (both only weigh Testing vs full CASA
+        verification), and the "External-Testing → weekly reauth" router line.
+      verify: ./check-oauth.sh | grep -c ancient-sunspot   # 0 = done
+
 - [ ] **⏸ SHELVED 2026-06-17 — OAuth migration to per-org Internal apps.**
       Full design + resume runbook live in `CLAUDE.md` → "Multi-org OAuth
       architecture" (see the SHELVED banner at its top). Brain:
