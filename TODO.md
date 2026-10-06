@@ -45,6 +45,14 @@
       `gsuite-brown` reads brown's. Docs fixed: global router line, this repo's
       `CLAUDE.md` (CURRENT STATE block), `mcp/wiki/concepts/oauth-model.md`, homeLab
       `vm101-ubuntu.md`, brain `gsuite-external-published-unverified`.
+      Also 2026-10-06 (~14:15 CDT): multi-verse got its own read-only (`gmail.read`)
+      logins for jaded + brown via `add-account.sh`, for the two-hourly brief; a detour
+      ran that command on the Pocket and narrowed the Pocket's brown login, restored
+      the same hour with all 16 features (8 scopes again, verified). So four Gmail
+      logins on the published app were issued 2026-10-06: Pocket jaded + brown,
+      multi-verse jaded + brown. The brief's subject leads with `LOGIN FAILED
+      <account>` if a multi-verse one dies, so the proof also arrives unasked; HEY
+      calendar has a reminder on 2026-10-14.
       ONLY THING LEFT — the day-8 proof: on or after **2026-10-14**, both must still
       answer without a reauth (any `mcp__gsuite-jaded__*` / `mcp__gsuite-brown__*`
       read). Alive → flip this `[x]` and drop the "Weekly auto-reauth script" item
