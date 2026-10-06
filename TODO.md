@@ -10,6 +10,22 @@
       Deliberate difference, not drift: Cynthia is less skeptical and holds less sensitive
       data, so she had no draft-only stipulation before install. Cody's gate stays Cody's.
 
+- [ ] **An account's login can land in the wrong account's folder, and nothing notices.** (added 2026-10-06)
+      Happened 2026-10-06: `setup-org-clients.sh jaded=… brown=…` asks in hash order
+      (brown first, then jaded), the browser chooser does not say which folder it is
+      for, and `gsuite auth` stores whatever account was picked. Result: `gsuite-jaded`
+      read brown's mailbox and `gsuite-brown` read jaded423's until the two
+      `tokens.json` files were swapped. The order half is fixed (2026-10-06: the script
+      now keeps an `ORDER` list and asks in the order typed); what is left is that
+      nothing checks who signed in. Options (Claude's, not yet picked):
+      (a) each config dir names its account (`"account"` in `settings.json`);
+      `gsuite auth` passes it as `login_hint` so the chooser preselects it, then
+      refuses to save a login whose Gmail profile address differs; (b) guard only in
+      `setup-org-clients.sh`: after each auth, compare the profile address with an
+      expected-address roster and roll back on mismatch; (c) `gsuite status` prints
+      the account address, so `check-oauth.sh` shows a crossed pair at a glance.
+      (a) removes the failure; (c) is the cheap visibility half.
+
 - [ ] **Move the two Gmail instances (jaded, brown) to a PUBLISHED External app Joshua owns — ends the weekly reauth.** (added 2026-10-05)
       resume (2026-10-06 ~11:30 CDT): Joshua chose to flip `mcps` itself instead of a
       second project (his call, accepting that j@ rides the untested rule too; it can

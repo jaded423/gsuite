@@ -53,6 +53,7 @@ fi
 
 # Parse + validate every pair BEFORE touching anything.
 declare -A PATH_FOR
+ORDER=()   # accounts in the order typed: an associative array loops in hash order, not this one
 for pair in "$@"; do
   acct="${pair%%=*}"; cpath="${pair#*=}"
   [[ "$acct" == "$pair" ]] && { echo "bad arg (need account=path): $pair" >&2; exit 64; }
@@ -69,11 +70,12 @@ if key != "installed":
 print(c[key].get("project_id", "?"))
 ' "$cpath")"
   echo "✓ $acct: valid Desktop client (project: $proj)"
+  [[ -n "${PATH_FOR[$acct]:-}" ]] || ORDER+=("$acct")
   PATH_FOR[$acct]="$cpath"
 done
 
 # Install + reauth each.
-for acct in "${!PATH_FOR[@]}"; do
+for acct in "${ORDER[@]}"; do
   dir="${DIR_FOR[$acct]}"
   mkdir -p "$dir/backups"
   if [[ -f "$dir/oauth-client.json" ]]; then
@@ -90,7 +92,7 @@ done
 
 echo
 echo "Re-authorizing. A browser opens per account — pick the MATCHING Google account."
-for acct in "${!PATH_FOR[@]}"; do
+for acct in "${ORDER[@]}"; do
   dir="${DIR_FOR[$acct]}"
   echo
   read -r -p "Re-auth $acct now? [Y/n] " ans
