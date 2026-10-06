@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check-oauth.sh — drift/status report across the 3 gsuite account config dirs.
+# check-oauth.sh — drift/status report across the gsuite account config dirs.
 #
 # For each account: which GCP project its OAuth client belongs to, the client
 # type, whether a token exists, and the scopes that token was granted. Use it to
@@ -18,9 +18,10 @@ declare -A DIR_FOR=(
   [elevated]="$HOME/.config/gsuite-elevated"
   [point4]="$HOME/.config/gsuite-point4"
   [jaded]="$HOME/.config/gsuite-jaded"
+  [brown]="$HOME/.config/gsuite-brown"
 )
 
-for acct in elevated point4 jaded; do
+for acct in elevated point4 jaded brown; do
   dir="${DIR_FOR[$acct]}"
   echo "── $acct  ($dir)"
   if [[ ! -d "$dir" ]]; then echo "   (no config dir)"; echo; continue; fi

@@ -37,11 +37,12 @@ declare -A DIR_FOR=(
   [elevated]="$HOME/.config/gsuite-elevated"
   [point4]="$HOME/.config/gsuite-point4"
   [jaded]="$HOME/.config/gsuite-jaded"
+  [brown]="$HOME/.config/gsuite-brown"
 )
 
 if [[ $# -eq 0 ]]; then
   echo "usage: $0 <account>=<client.json> [<account>=<client.json> ...]" >&2
-  echo "accounts: elevated point4 jaded" >&2
+  echo "accounts: elevated point4 jaded brown" >&2
   exit 64
 fi
 
