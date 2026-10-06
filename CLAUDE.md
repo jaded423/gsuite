@@ -105,13 +105,15 @@ Either way, **nothing changes without re-auth**. The browser flow is the confirm
 > any more, and none of Joshua's accounts can open it.
 > Publishing without submitting for verification is free and is the state the notes below
 > never weighed: the 7-day expiry belongs to **Testing** only. Cost: a "Google hasn't
-> verified this app" screen per sign-in (Advanced → Go to jaded-gsuite), a 100-user cap.
+> verified this app" screen per sign-in (Advanced → Go to j-gsuite; the app was named jaded-gsuite until 2026-10-06), a 100-user cap.
 > Do not upload a logo (it forces verification) and do not pick Testing (it starts the
 > 7-day clock for every account). Revert = Audience → "Make internal" (the two Gmail
 > accounts would then need another home). **Unproven until 2026-10-14:** that jaded and
 > brown survive past day 7 — `TODO.md`.
-> When re-authing more than one account, watch which account each prompt names: a login
-> saved into the wrong folder is not detected (`TODO.md`).
+> Sign-ins name their account: `gsuite auth --expect <email>` preselects it and saves
+> nothing if any other account signs in (both helper scripts pass it), because one shared
+> client means a login would otherwise "work" in the wrong folder. Support + developer
+> contact email on the app = j@jadedviber.com.
 
 > **⏸ SHELVED 2026-06-17 — NOT the current state. Stop-gap in effect.**
 > The split below is the *target*, deferred. **Current working state:** all four
