@@ -96,6 +96,23 @@ Either way, **nothing changes without re-auth**. The browser flow is the confirm
 
 ## Multi-org OAuth architecture (2026-06-17) — Internal per Workspace + Testing for jaded
 
+> **CURRENT STATE since 2026-10-06 — read this before anything below; the rest of this
+> section is history.** There are three live instances and they share ONE OAuth app: GCP
+> project `mcps` (owned by j@jadedviber.com), consent screen **External / In production,
+> unverified**, one Desktop client. `gsuite` = j@jadedviber.com · `gsuite-jaded` =
+> jaded423@gmail.com · `gsuite-brown` = brown.joshua.david@gmail.com (`./check-oauth.sh`
+> shows all on `project=mcps-508904`). Nothing uses Elevated's `ancient-sunspot-471815-g9`
+> any more, and none of Joshua's accounts can open it.
+> Publishing without submitting for verification is free and is the state the notes below
+> never weighed: the 7-day expiry belongs to **Testing** only. Cost: a "Google hasn't
+> verified this app" screen per sign-in (Advanced → Go to jaded-gsuite), a 100-user cap.
+> Do not upload a logo (it forces verification) and do not pick Testing (it starts the
+> 7-day clock for every account). Revert = Audience → "Make internal" (the two Gmail
+> accounts would then need another home). **Unproven until 2026-10-14:** that jaded and
+> brown survive past day 7 — `TODO.md`.
+> When re-authing more than one account, watch which account each prompt names: a login
+> saved into the wrong folder is not detected (`TODO.md`).
+
 > **⏸ SHELVED 2026-06-17 — NOT the current state. Stop-gap in effect.**
 > The split below is the *target*, deferred. **Current working state:** all four
 > accounts (`gsuite-{elevated,dax,point4,jaded}`) share the ONE Elevated Desktop

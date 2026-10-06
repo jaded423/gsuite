@@ -37,14 +37,19 @@
       day: none of j@ / jaded423 / brown can open `ancient-sunspot-471815-g9`, so it is
       Elevated's. brown confirmed on the same old client as jaded (`check-oauth.sh`
       now lists it).
-      NEXT (Joshua, in a terminal — it prompts and opens the browser):
-      `./setup-org-clients.sh jaded=$HOME/.config/gsuite/oauth-client.json brown=$HOME/.config/gsuite/oauth-client.json`
-      (reuses the one `mcps` Desktop client for all three accounts). Then: run the
-      verify line; fix the docs that still say `mcps` is Internal and jaded/brown are
-      on External-Testing (global router line, this repo's `CLAUDE.md`,
-      `mcp/wiki/concepts/oauth-model.md`, homeLab `vm101-ubuntu.md`, brain
-      `gsuite-external-published-unverified`); day-8 proof = jaded and brown still
-      alive 8 days after their reauth.
+      DONE the same day (~12:30 CDT): Joshua ran
+      `./setup-org-clients.sh jaded=… brown=…` with the `mcps` client file (one
+      Desktop client for all three accounts); the two logins landed crossed (item
+      above) and he swapped the `tokens.json` files. Verified after the swap: the
+      verify line returns 0, `gsuite-jaded` reads jaded423's mailbox and
+      `gsuite-brown` reads brown's. Docs fixed: global router line, this repo's
+      `CLAUDE.md` (CURRENT STATE block), `mcp/wiki/concepts/oauth-model.md`, homeLab
+      `vm101-ubuntu.md`, brain `gsuite-external-published-unverified`.
+      ONLY THING LEFT — the day-8 proof: on or after **2026-10-14**, both must still
+      answer without a reauth (any `mcp__gsuite-jaded__*` / `mcp__gsuite-brown__*`
+      read). Alive → flip this `[x]` and drop the "Weekly auto-reauth script" item
+      below. `invalid_grant` → the claim is wrong: "Make internal" on `mcps` and
+      build the second project for the Gmail accounts.
       The "Plan" bullet below (a NEW project) is superseded by this.
       Idea captured mid-thought, not yet looked into further. Reasoning + the
       three-state table: brain `gsuite-external-published-unverified`.
@@ -70,7 +75,7 @@
         verification), and the "External-Testing → weekly reauth" router line.
       verify: ./check-oauth.sh | grep -c ancient-sunspot   # 0 = done
 
-- [ ] **⏸ SHELVED 2026-06-17 — OAuth migration to per-org Internal apps.**
+- [x] 2026-10-06 — overtaken: no instance rides `ancient-sunspot` any more (verify line = 0); elevated + point4 are deregistered, and j@/jaded/brown share the published `mcps` app (item above). Was: **⏸ SHELVED 2026-06-17 — OAuth migration to per-org Internal apps.**
       Full design + resume runbook live in `CLAUDE.md` → "Multi-org OAuth
       architecture" (see the SHELVED banner at its top). Brain:
       `gsuite-oauth-architecture`.
