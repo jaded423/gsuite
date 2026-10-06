@@ -11,6 +11,25 @@
       data, so she had no draft-only stipulation before install. Cody's gate stays Cody's.
 
 - [ ] **Move the two Gmail instances (jaded, brown) to a PUBLISHED External app Joshua owns — ends the weekly reauth.** (added 2026-10-05)
+      resume (2026-10-06 ~11:30 CDT): Joshua chose to flip `mcps` itself instead of a
+      second project (his call, accepting that j@ rides the untested rule too; it can
+      be switched back with "Make internal"). DONE in the console as j@: Branding got
+      home/privacy/terms links (`jadedviber.com/app|privacy|terms`) + authorized domain
+      `jadedviber.com`, no logo (a logo forces verification); Audience is now
+      **External / In production**, 0 of 100 users. j@ still refreshes on the Pocket,
+      multi-verse and ubuntu (forced refresh on each, after the flip). Checked the same
+      day: none of j@ / jaded423 / brown can open `ancient-sunspot-471815-g9`, so it is
+      Elevated's. brown confirmed on the same old client as jaded (`check-oauth.sh`
+      now lists it).
+      NEXT (Joshua, in a terminal — it prompts and opens the browser):
+      `./setup-org-clients.sh jaded=$HOME/.config/gsuite/oauth-client.json brown=$HOME/.config/gsuite/oauth-client.json`
+      (reuses the one `mcps` Desktop client for all three accounts). Then: run the
+      verify line; fix the docs that still say `mcps` is Internal and jaded/brown are
+      on External-Testing (global router line, this repo's `CLAUDE.md`,
+      `mcp/wiki/concepts/oauth-model.md`, homeLab `vm101-ubuntu.md`, brain
+      `gsuite-external-published-unverified`); day-8 proof = jaded and brown still
+      alive 8 days after their reauth.
+      The "Plan" bullet below (a NEW project) is superseded by this.
       Idea captured mid-thought, not yet looked into further. Reasoning + the
       three-state table: brain `gsuite-external-published-unverified`.
       • Why now: `gsuite-jaded` still rides Desktop client `664420379329-…` in
