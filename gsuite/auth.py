@@ -126,11 +126,26 @@ def granted_scopes() -> set[str]:
     return set((tokens.get("scope") or "").split())
 
 
-def run_auth_flow(scopes: list[str]) -> Credentials:
+class WrongAccountError(RuntimeError):
+    """The Google account that signed in is not the one this config dir is for."""
+
+
+def _signed_in_address(creds: Credentials) -> str:
+    """The address of the account these credentials belong to (needs a Gmail scope)."""
+    gmail = build("gmail", "v1", credentials=creds, cache_discovery=False)
+    return gmail.users().getProfile(userId="me").execute()["emailAddress"].lower()
+
+
+def run_auth_flow(scopes: list[str], expect: str | None = None) -> Credentials:
     """Kick off the browser OAuth flow for the requested scope set.
 
     Called by `gsuite auth`. Uses the installed-app / local-server flow,
     which opens a browser and listens on localhost for the callback.
+
+    `expect` names the account this config dir is for. The chooser is pointed at it
+    (`login_hint`), and a login from any other account is refused BEFORE it is saved:
+    every instance shares one client, so nothing else tells two accounts' tokens apart
+    (2026-10-06: two logins were saved into each other's dirs and both "worked").
     """
     client = _load_client_config()
     flow = InstalledAppFlow.from_client_config(client, scopes=scopes)
@@ -138,7 +153,19 @@ def run_auth_flow(scopes: list[str]) -> Credentials:
     # then open the printed URL in a browser on the forwarding machine. The redirect
     # to localhost:<n> rides the tunnel back to the server. Unset = random port + browser.
     port = int(os.environ.get("GSUITE_AUTH_PORT", "0") or 0)
-    creds = flow.run_local_server(port=port, open_browser=(port == 0))
+    hint = {"login_hint": expect} if expect else {}
+    creds = flow.run_local_server(port=port, open_browser=(port == 0), **hint)
+    if expect:
+        try:
+            actual = _signed_in_address(creds)
+        except Exception as exc:  # no Gmail scope, API off, network: unknown is not a match
+            raise WrongAccountError(
+                f"could not confirm which account signed in ({exc}); nothing was saved"
+            ) from exc
+        if actual != expect.lower():
+            raise WrongAccountError(
+                f"signed in as {actual}, but this login is for {expect}; nothing was saved"
+            )
     _write_tokens(_creds_to_tokens(creds, _read_tokens()))
     return creds
 

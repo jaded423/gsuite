@@ -198,6 +198,10 @@ migrated.
 - `setup-org-clients.sh` — install a distinct OAuth client per account dir + reauth.
 - `enable-apis.sh <PROJECT>` — enable the 7 required APIs in a project.
 - `check-oauth.sh [--apis]` — drift/status report across all 4 dirs.
+- `add-account.sh <name> <email> <feature>…` (2026-10-06) — give a machine a login for one
+  more account: makes `~/.config/gsuite-<name>/` with the shared client, switches on exactly
+  the features named, signs in with `gsuite auth --expect <email>` (preselects that account
+  and refuses to save a login from any other). Headless use: header of the script.
 - `remint-oauth.sh` — DEPRECATED single-client installer (kept for history).
 
 ### jadedViber site (done 2026-06-17)

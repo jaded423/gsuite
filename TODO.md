@@ -10,7 +10,7 @@
       Deliberate difference, not drift: Cynthia is less skeptical and holds less sensitive
       data, so she had no draft-only stipulation before install. Cody's gate stays Cody's.
 
-- [ ] **An account's login can land in the wrong account's folder, and nothing notices.** (added 2026-10-06)
+- [x] 2026-10-06 — fixed the same day with option (a), minus the settings field: `gsuite auth --expect <email>` preselects the account (`login_hint`) and refuses to save a login from any other (or one it cannot identify); `setup-org-clients.sh` passes it from an `EMAIL_FOR` roster and names the account in its prompt; new `add-account.sh <name> <email> <feature>…` always passes it. Tests: `tests/test_auth_expect.py` (4), suite 180 passed. Not done: option (c), `gsuite status` printing the account. Was: **An account's login can land in the wrong account's folder, and nothing notices.** (added 2026-10-06)
       Happened 2026-10-06: `setup-org-clients.sh jaded=… brown=…` asks in hash order
       (brown first, then jaded), the browser chooser does not say which folder it is
       for, and `gsuite auth` stores whatever account was picked. Result: `gsuite-jaded`

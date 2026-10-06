@@ -21,11 +21,11 @@ import sys
 from typing import Any
 
 from . import __version__
-from .auth import run_auth_flow, scope_report
+from .auth import WrongAccountError, run_auth_flow, scope_report
 from .settings import FEATURE_SCOPES, load_settings, set_feature
 
 
-def _cmd_auth(_args: argparse.Namespace) -> int:
+def _cmd_auth(args: argparse.Namespace) -> int:
     settings = load_settings()
     required = sorted(settings.required_scopes())
     if not required:
@@ -34,7 +34,11 @@ def _cmd_auth(_args: argparse.Namespace) -> int:
     print(f"Requesting {len(required)} scope(s):", file=sys.stderr)
     for s in required:
         print(f"  - {s}", file=sys.stderr)
-    run_auth_flow(required)
+    try:
+        run_auth_flow(required, expect=args.expect)
+    except WrongAccountError as exc:
+        print(f"refused: {exc}", file=sys.stderr)
+        return 3
     report = scope_report()
     print(json.dumps(report, indent=2))
     return 0 if not report["needs_reauth"] else 2
@@ -120,6 +124,11 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sp = sub.add_parser("auth", help="Run browser OAuth flow for enabled features")
+    sp.add_argument(
+        "--expect",
+        metavar="EMAIL",
+        help="the account this config dir is for: preselect it, and refuse to save any other login",
+    )
     sp.set_defaults(fn=_cmd_auth)
 
     sp = sub.add_parser("status", help="Show token + scope state")

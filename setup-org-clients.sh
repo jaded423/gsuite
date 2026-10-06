@@ -39,6 +39,12 @@ declare -A DIR_FOR=(
   [jaded]="$HOME/.config/gsuite-jaded"
   [brown]="$HOME/.config/gsuite-brown"
 )
+# The Google account each dir is for. Every dir shares one client, so a login is valid in
+# any of them; naming the account lets `gsuite auth --expect` refuse the wrong one.
+declare -A EMAIL_FOR=(
+  [jaded]="jaded423@gmail.com"
+  [brown]="brown.joshua.david@gmail.com"
+)
 
 if [[ $# -eq 0 ]]; then
   echo "usage: $0 <account>=<client.json> [<account>=<client.json> ...]" >&2
@@ -95,10 +101,12 @@ echo "Re-authorizing. A browser opens per account — pick the MATCHING Google a
 for acct in "${ORDER[@]}"; do
   dir="${DIR_FOR[$acct]}"
   echo
-  read -r -p "Re-auth $acct now? [Y/n] " ans
+  expect=()
+  [[ -n "${EMAIL_FOR[$acct]:-}" ]] && expect=(--expect "${EMAIL_FOR[$acct]}")
+  read -r -p "Re-auth $acct${EMAIL_FOR[$acct]:+ (${EMAIL_FOR[$acct]})} now? [Y/n] " ans
   case "${ans:-Y}" in
-    [nN]*) echo "  skipped — run later: GSUITE_CONFIG_DIR=$dir $GSUITE_BIN auth" ;;
-    *)     GSUITE_CONFIG_DIR="$dir" "$GSUITE_BIN" auth ;;
+    [nN]*) echo "  skipped — run later: GSUITE_CONFIG_DIR=$dir $GSUITE_BIN auth ${expect[*]}" ;;
+    *)     GSUITE_CONFIG_DIR="$dir" "$GSUITE_BIN" auth "${expect[@]}" ;;
   esac
 done
 
