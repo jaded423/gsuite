@@ -26,7 +26,7 @@
       the account address, so `check-oauth.sh` shows a crossed pair at a glance.
       (a) removes the failure; (c) is the cheap visibility half.
 
-- [ ] **Move the two Gmail instances (jaded, brown) to a PUBLISHED External app Joshua owns — ends the weekly reauth.** (added 2026-10-05)
+- [x] **Move the two Gmail instances (jaded, brown) to a PUBLISHED External app Joshua owns — ends the weekly reauth.** (added 2026-10-05) — DONE 2026-10-18 (day-12 proof: `mcp__gsuite-jaded__gmail_list_labels` + `mcp__gsuite-brown__gmail_list_labels` both answered without a reauth, 12 days after the 2026-10-06 logins; `claude mcp list` shows all three gsuite instances Connected; verify line `./check-oauth.sh | grep -c ancient-sunspot` = 0)
       resume (2026-10-06 ~11:30 CDT): Joshua chose to flip `mcps` itself instead of a
       second project (his call, accepting that j@ rides the untested rule too; it can
       be switched back with "Make internal"). DONE in the console as j@: Branding got

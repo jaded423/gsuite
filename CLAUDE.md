@@ -108,8 +108,8 @@ Either way, **nothing changes without re-auth**. The browser flow is the confirm
 > verified this app" screen per sign-in (Advanced → Go to j-gsuite; the app was named jaded-gsuite until 2026-10-06), a 100-user cap.
 > Do not upload a logo (it forces verification) and do not pick Testing (it starts the
 > 7-day clock for every account). Revert = Audience → "Make internal" (the two Gmail
-> accounts would then need another home). **Unproven until 2026-10-14:** that jaded and
-> brown survive past day 7 — `TODO.md`.
+> accounts would then need another home). **Proven 2026-10-18:** jaded and brown both
+> answered on day 12 with no reauth — the 7-day expiry is gone.
 > Sign-ins name their account: `gsuite auth --expect <email>` preselects it and saves
 > nothing if any other account signs in (both helper scripts pass it), because one shared
 > client means a login would otherwise "work" in the wrong folder. Support + developer
