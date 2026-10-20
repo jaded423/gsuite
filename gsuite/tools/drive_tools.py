@@ -18,7 +18,7 @@ import mimetypes
 import os
 from typing import Any
 
-from googleapiclient.http import MediaFileUpload, MediaInMemoryUpload
+from googleapiclient.http import MediaFileUpload, MediaInMemoryUpload, MediaIoBaseDownload
 
 from ..auth import with_retry
 from . import drive_common
@@ -239,6 +239,83 @@ def drive_read_file(file_id: str, max_bytes: int = 1_000_000) -> dict[str, Any]:
         out["content"] = base64.b64encode(data).decode("ascii")
         out["encoding"] = "base64"
     return out
+
+
+@tool(
+    name="drive_download_file",
+    feature="drive.read",
+    description=(
+        "Download a Drive file's bytes to a local path (the Drive twin of "
+        "`gmail_get_attachment`). Use this for binary files — PDFs, images, "
+        "Office files — that `drive_read_file` can only return as base64 in the "
+        "chat. Streams to disk, so size is not capped by the response. "
+        "Google-native Docs/Sheets/Slides are exported (default PDF; pass "
+        "`export_mime` for another format). Refuses to overwrite an existing "
+        "file unless `overwrite` is true. Returns {saved_to, bytes, name, mimeType}."
+    ),
+    input_schema={
+        "type": "object",
+        "required": ["file_id", "save_path"],
+        "properties": {
+            "file_id": {"type": "string"},
+            "save_path": {
+                "type": "string",
+                "description": "Local filesystem path to write the file to.",
+            },
+            "export_mime": {
+                "type": "string",
+                "description": (
+                    "Native Google files only: MIME type to export as "
+                    "(default application/pdf)."
+                ),
+            },
+            "overwrite": {"type": "boolean", "default": False},
+        },
+    },
+)
+def drive_download_file(
+    file_id: str,
+    save_path: str,
+    export_mime: str | None = None,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    save_path = os.path.abspath(os.path.expanduser(save_path))
+    if os.path.exists(save_path) and not overwrite:
+        return error(f"{save_path} already exists; pass overwrite=true to replace it")
+    svc = _svc()
+    meta = with_retry(
+        lambda: svc.files()
+        .get(fileId=file_id, fields="id,name,mimeType,size", supportsAllDrives=True)
+        .execute()
+    )
+    mime = meta.get("mimeType", "")
+    if mime.startswith("application/vnd.google-apps."):
+        if mime not in GOOGLE_NATIVE_EXPORT:
+            return error(f"cannot download Google-native type {mime!r} (no export)")
+        request = svc.files().export_media(
+            fileId=file_id, mimeType=export_mime or "application/pdf"
+        )
+    else:
+        request = svc.files().get_media(fileId=file_id, supportsAllDrives=True)
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    tmp = f"{save_path}.part"
+    try:
+        with open(tmp, "wb") as fh:
+            downloader = MediaIoBaseDownload(fh, request)
+            done = False
+            while not done:
+                _, done = with_retry(downloader.next_chunk)
+        os.replace(tmp, save_path)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+    return {
+        "ok": True,
+        "saved_to": save_path,
+        "bytes": os.path.getsize(save_path),
+        "name": meta.get("name"),
+        "mimeType": mime,
+    }
 
 
 # --- write -------------------------------------------------------------------

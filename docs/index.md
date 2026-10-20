@@ -8,7 +8,7 @@ related: [changelog]
 # gsuite docs — index
 
 Catalog of the **gsuite** in-house Google Workspace MCP server (Gmail, Drive, Docs, Sheets,
-Slides, Calendar, Tasks — 66 tools as of 2026-09-29, see roster note below; 3 per-account
+Slides, Calendar, Tasks — 67 tools as of 2026-10-20, see roster note below; 3 per-account
 instances). This is a **Tier-2 leaf repo**: one
 server, one purpose. It orchestrates nothing, so it has **no `wiki/` tree** (no
 `components/`, no `concepts/`) — just its own typed docs, cataloged here. (Contrast: the

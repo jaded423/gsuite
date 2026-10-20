@@ -49,6 +49,7 @@ EXPECTED_TOOLS = {
         "drive_list_delete_later",
         "drive_get_metadata",
         "drive_read_file",
+        "drive_download_file",
     },
     "drive.write": {
         "drive_create_folder",

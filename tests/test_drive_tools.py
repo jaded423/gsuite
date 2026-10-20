@@ -287,6 +287,68 @@ def test_read_file_truncates(fake_svc):
     assert out["content"] == "abc"
 
 
+class _FakeDownloader:
+    """Stands in for MediaIoBaseDownload: writes two chunks, then reports done."""
+
+    def __init__(self, fh, request):
+        self.fh, self.request, self.calls = fh, request, 0
+
+    def next_chunk(self):
+        self.calls += 1
+        self.fh.write(b"%PDF-" if self.calls == 1 else b"body")
+        return None, self.calls >= 2
+
+
+def test_download_file_writes_bytes(fake_svc, monkeypatch, tmp_path):
+    monkeypatch.setattr(drive_tools, "MediaIoBaseDownload", _FakeDownloader)
+    _get_returns(fake_svc, {"id": "P", "name": "form.pdf", "mimeType": "application/pdf"})
+    dest = tmp_path / "sub" / "form.pdf"
+    out = drive_tools.drive_download_file(file_id="P", save_path=str(dest))
+    assert out["ok"] is True
+    assert out["saved_to"] == str(dest)
+    assert out["bytes"] == 9
+    assert dest.read_bytes() == b"%PDF-body"
+    assert not (tmp_path / "sub" / "form.pdf.part").exists()
+    assert fake_svc.files.return_value.get_media.call_args.kwargs["fileId"] == "P"
+
+
+def test_download_file_refuses_overwrite(fake_svc, monkeypatch, tmp_path):
+    monkeypatch.setattr(drive_tools, "MediaIoBaseDownload", _FakeDownloader)
+    _get_returns(fake_svc, {"id": "P", "name": "form.pdf", "mimeType": "application/pdf"})
+    dest = tmp_path / "form.pdf"
+    dest.write_bytes(b"keep me")
+    out = drive_tools.drive_download_file(file_id="P", save_path=str(dest))
+    assert out["ok"] is False
+    assert dest.read_bytes() == b"keep me"
+    out = drive_tools.drive_download_file(file_id="P", save_path=str(dest), overwrite=True)
+    assert out["ok"] is True
+    assert dest.read_bytes() == b"%PDF-body"
+
+
+def test_download_file_exports_native_as_pdf(fake_svc, monkeypatch, tmp_path):
+    monkeypatch.setattr(drive_tools, "MediaIoBaseDownload", _FakeDownloader)
+    _get_returns(fake_svc, {
+        "id": "D", "name": "Doc", "mimeType": "application/vnd.google-apps.document",
+    })
+    out = drive_tools.drive_download_file(file_id="D", save_path=str(tmp_path / "d.pdf"))
+    assert out["ok"] is True
+    assert fake_svc.files.return_value.export_media.call_args.kwargs["mimeType"] == "application/pdf"
+    out = drive_tools.drive_download_file(
+        file_id="D", save_path=str(tmp_path / "d.docx"),
+        export_mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    assert "wordprocessingml" in fake_svc.files.return_value.export_media.call_args.kwargs["mimeType"]
+
+
+def test_download_file_rejects_unexportable_native(fake_svc, tmp_path):
+    _get_returns(fake_svc, {
+        "id": "FORM", "name": "F", "mimeType": "application/vnd.google-apps.form",
+    })
+    out = drive_tools.drive_download_file(file_id="FORM", save_path=str(tmp_path / "f"))
+    assert out["ok"] is False
+    assert not (tmp_path / "f").exists()
+
+
 def test_read_file_rejects_unexportable_native(fake_svc):
     fake_svc.files.return_value.get.return_value.execute.return_value = {
         "id": "FORM", "name": "F", "mimeType": "application/vnd.google-apps.form",
